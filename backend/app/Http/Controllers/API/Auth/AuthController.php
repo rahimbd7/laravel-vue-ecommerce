@@ -1,5 +1,5 @@
 <?php
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\API\Auth;
 
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Trait\ApiResponseTrait;
+use App\Http\Controllers\Controller;
 class AuthController extends Controller {
     protected AuthService $authService;
     use ApiResponseTrait;

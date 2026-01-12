@@ -40,8 +40,23 @@ class User extends Authenticatable {
     public function profile() {
         return $this->hasOne(Profile::class, 'user_uuid', 'uuid');
     }
+    public function vendor() {
+        return $this->hasOne(Vendor::class, 'user_uuid', 'uuid');
+    }
 
-
+    //Role check methods
+    public function isAdmin(): bool {
+        return $this->role === 'admin';
+    }
+    public function isVendor(): bool {
+        return $this->role === 'vendor';
+    }
+    public function isCustomer(): bool {
+        return $this->role === 'customer';
+    }
+    public function isVerifiedVendor(): bool {
+        return $this->isVendor() && $this->vendor && $this->vendor?->is_verified;
+    }
 
     protected $fillable = [
         'name',
