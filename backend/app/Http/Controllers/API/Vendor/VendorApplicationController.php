@@ -50,6 +50,7 @@ class VendorApplicationController extends Controller
 
      public function applicationStatus(Request $request)
     {
+        dump($request->user());
         $user = $request->user();
 
         if (!$user->vendor) {
@@ -64,7 +65,7 @@ class VendorApplicationController extends Controller
             'vendor' => new VendorResource($user->vendor->load('user')),
             'message' => $user->vendor->is_verified
                 ? 'Your vendor account is verified.'
-                : 'Your application is pending approval.'
+                : 'Your application is pending for approval.'
         ]);
     }
     public function show(string $id)

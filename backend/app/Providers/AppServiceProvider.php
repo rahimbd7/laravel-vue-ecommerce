@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Services\AuthService;
+use App\Services\CategoryService;
 use App\Services\VendorService;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(VendorService::class, function ($app) {
             return new VendorService();
+        });
+        $this->app->singleton (CategoryService::class, function ($app) {
+            return new CategoryService();
         });
 
     }
