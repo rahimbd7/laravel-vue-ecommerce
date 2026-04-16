@@ -50,7 +50,6 @@ class VendorApplicationController extends Controller
 
      public function applicationStatus(Request $request)
     {
-        dump($request->user());
         $user = $request->user();
 
         if (!$user->vendor) {

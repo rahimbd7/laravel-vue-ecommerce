@@ -2,10 +2,18 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use App\Services\AuthService;
+use App\Services\CartService;
 use App\Services\CategoryService;
+use App\Services\CheckoutService;
+use App\Services\OrderService;
+use App\Services\ProductImageService;
+use App\Services\ProductReviewService;
+use App\Services\ProductService;
+use App\Services\ProductVariationService;
 use App\Services\VendorService;
+use Illuminate\Support\ServiceProvider;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,17 +22,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //auth service singleton
-        $this->app->singleton(AuthService::class, function ($app) {
-            return new AuthService();
-        });
+        // Bind services as singletons and allow Laravel to resolve constructor dependencies.
+        // (e.g. ProductService requires other services in its constructor)
+        $this->app->singleton(AuthService::class);
+        $this->app->singleton(VendorService::class);
+        $this->app->singleton(CategoryService::class);
 
-        $this->app->singleton(VendorService::class, function ($app) {
-            return new VendorService();
-        });
-        $this->app->singleton (CategoryService::class, function ($app) {
-            return new CategoryService();
-        });
+        // Explicitly bind Product dependencies too (optional, but keeps intent clear)
+        $this->app->singleton(ProductImageService::class);
+        $this->app->singleton(ProductVariationService::class);
+        $this->app->singleton(ProductReviewService::class);
+        $this->app->singleton(ProductService::class);
+        $this->app->singleton (OrderService::class);
+        $this->app->singleton (CartService::class);
+        $this->app->singleton (CheckoutService::class);
 
     }
 

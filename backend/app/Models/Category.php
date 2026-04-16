@@ -40,6 +40,9 @@ class Category extends Model {
     public function products() {
         return $this->hasMany(Product::class);
     }
+    public function vendors() {
+        return $this->hasManyThrough(Vendor::class, Product::class);
+    }
     //accessors
     public function getImageUrlAttribute() {
         return $this->image ? asset('storage/' . $this->image) : null;

@@ -35,15 +35,18 @@ class Vendor extends Model
     public function user() {
         return $this->belongsTo(User::class, 'user_uuid', 'uuid');
     }
-    public function vendor() {
-        return $this->belongsTo(Vendor::class, 'vendor_id', 'id');
+    public function products() {
+        return $this->hasMany(Product::class);
     }
     //scopes
     public function scopeVerified($query) {
         return $query->where('is_verified', true);
     }
     public function scopePending($query) {
-        return $query->where('is_verified', false);
+        return $query
+            ->where('status', 'pending')
+            ->where('is_verified', false)
+            ->whereNull('rejected_at');
     }
     //helpers
     public function markAsVerified() {
