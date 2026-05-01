@@ -27,7 +27,8 @@ class CheckoutController extends Controller
         try {
             $summary = $this->checkoutService->getCheckoutSummary();
 
-            $user = Request::user();
+            /** @var \App\Models\User|null $user */
+            $user = auth()->user();
             $profile = $user->profile;
 
             $hasAddress = $profile && !empty($profile->address);
@@ -56,100 +57,32 @@ class CheckoutController extends Controller
     /**
      * POST /checkout/process - Places order (and optionally saves address)
      */
-    public function process(Request $request)
-    {
-        try {
-            $user = Request::user();
-            $profile = $user->profile;
-            $hasAddress = $profile && !empty($profile->address);
+  public function process(Request $request)
+{
+    try {
+        // ✅ Only validation here - business logic delegated to service
+        $validated = $request->validate([
+            'payment_method' => 'required|in:cod,bank_transfer,credit_card,paypal',
+            'shipping_method' => 'nullable|in:standard,express,overnight',
+            'notes' => 'nullable|string|max:1000',
+            'shipping_address' => 'nullable|string|max:500',
+            'shipping_city' => 'nullable|string|max:100',
+            'shipping_country' => 'nullable|string|size:2',
+            'billing_address' => 'nullable|string|max:500',
+            'billing_city' => 'nullable|string|max:100',
+            'billing_country' => 'nullable|string|size:2',
+            'save_address' => 'boolean',
+            'use_same_address' => 'boolean',
+        ]);
 
-            // If user has NO saved address, they MUST provide it
-            if (!$hasAddress) {
-                $request->validate([
-                    'shipping_address' => 'required|string|max:500',
-                    'shipping_city' => 'required|string|max:100',
-                    'shipping_country' => 'required|string|size:2',
-                    'billing_address' => 'required|string|max:500',
-                    'billing_city' => 'required|string|max:100',
-                    'billing_country' => 'required|string|size:2',
-                    'payment_method' => 'required|in:cod,bank_transfer,credit_card,paypal',
-                    'shipping_method' => 'nullable|in:standard,express,overnight',
-                    'save_address' => 'boolean',
-                ]);
-            } else {
-                // User has address - can checkout with minimal data
-                $request->validate([
-                    'payment_method' => 'required|in:cod,bank_transfer,credit_card,paypal',
-                    'shipping_method' => 'nullable|in:standard,express,overnight',
-                    'notes' => 'nullable|string|max:1000',
-                    // Optional: User can update address during checkout
-                    'shipping_address' => 'nullable|string|max:500',
-                    'shipping_city' => 'nullable|string|max:100',
-                    'shipping_country' => 'nullable|string|size:2',
-                    'save_address' => 'boolean',
-                ]);
-            }
+        $result = $this->checkoutService->processCheckout($validated);
 
-            // Handle address: use saved or new, and save if requested
-            $shippingAddress = null;
-            $shippingCity = null;
-            $shippingCountry = null;
-            $billingAddress = null;
-            $billingCity = null;
-            $billingCountry = null;
+        return $this->successResponse($result, "Order placed successfully");
 
-            if ($hasAddress && empty($request->shipping_address)) {
-                // Use saved address
-                $shippingAddress = $profile->address;
-                $billingAddress = $profile->address;
-            } else {
-                // Use provided address
-                $shippingAddress = $request->shipping_address;
-                $shippingCity = $request->shipping_city;
-                $shippingCountry = $request->shipping_country;
-                $billingAddress = $request->billing_address ?? $request->shipping_address;
-                $billingCity = $request->billing_city ?? $request->shipping_city;
-                $billingCountry = $request->billing_country ?? $request->shipping_country;
-
-                // Save address to profile if requested
-                if ($request->save_address) {
-                    $profileData = [
-                        'address' => $shippingAddress,
-                        'phone' => $request->customer_phone ?? $profile->phone ?? null,
-                    ];
-
-                    if ($profile) {
-                        $profile->update($profileData);
-                    } else {
-                        $user->profile()->create($profileData);
-                    }
-                }
-            }
-
-            // Merge address data for order creation
-            $request->merge([
-                'shipping_address' => $shippingAddress,
-                'shipping_city' => $shippingCity,
-                'shipping_country' => $shippingCountry,
-                'billing_address' => $billingAddress,
-                'billing_city' => $billingCity,
-                'billing_country' => $billingCountry,
-                'customer_phone' => $request->customer_phone ?? $profile->phone ?? null,
-            ]);
-
-            // Set default shipping method
-            if (!$request->has('shipping_method')) {
-                $request->merge(['shipping_method' => 'standard']);
-            }
-
-            $result = $this->checkoutService->processCheckout($request->all());
-
-            return $this->successResponse($result, "Order placed successfully");
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return $this->validationErrorResponse($e->errors(), "Validation failed");
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 400);
-        }
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return $this->validationErrorResponse($e->errors(), "Validation failed");
+    } catch (\Exception $e) {
+        return $this->errorResponse($e->getMessage(), 400);
     }
+}
 }

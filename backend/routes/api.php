@@ -11,6 +11,7 @@ use App\Http\Controllers\API\Product\ProductController;
 use App\Http\Controllers\API\Product\ProductImageController;
 use App\Http\Controllers\API\Product\ProductReviewController;
 use App\Http\Controllers\API\Product\ProductVariationController;
+use App\Http\Controllers\API\Profile\ProfileController;
 use App\Http\Controllers\API\Vendor\VendorApplicationController;
 use App\Http\Controllers\API\Vendor\VendorController;
 use Illuminate\Http\Request;
@@ -81,8 +82,12 @@ Route::prefix('cart')->group(function () {
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    // Route::post('/me', [AuthController::class, 'me']);
-    // Route::apiResource('/users', UserController::class);
+    Route::get('/me', [ProfileController::class, 'me']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::put('/profile/avatar', [ProfileController::class, 'updateAvatar']);
+    Route::put('/profile/address', [ProfileController::class, 'updateAddress']);
+    Route::get('/profile/address', [ProfileController::class, 'getAddress']);
+    Route::put('/profile/change-password', [ProfileController::class, 'changePassword']);
 });
 
 
@@ -91,9 +96,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 // Order Routes - Single route group with auth only
 //Role-based authorization handled in controller
-Route::middleware(['auth:sanctum'])->prefix('orders')->group(function () {
+Route::middleware(['auth:sanctum', 'role:customer'])->prefix('orders')->group(function () {
     Route::get('/', [OrderController::class, 'index'])->name('orders.index');
-    Route::post('/', [OrderController::class, 'store'])->name('orders.store');
     Route::get('/summary', [OrderController::class, 'summary'])->name('orders.summary');
     Route::get('/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::put('/{order}', [OrderController::class, 'update'])->name('orders.update');
@@ -212,9 +216,15 @@ Route::prefix('cart')->group(function () {
     Route::post('/items/{cartItemId}/move-to-cart', [CartController::class, 'moveToCart']);
 });
 
+/**
+ * *Admin Order Management Routes
+ */
+
+Route::post('/', [OrderController::class, 'store'])->name('orders.store')->middleware('role:admin');
+
+
 /// ============ AUTHENTICATED ONLY ROUTES ============
 Route::middleware(['auth:sanctum'])->group(function () {
-
     // Cart sync (authenticated only)
     Route::prefix('cart')->group(function () {
         Route::post('/sync', [CartController::class, 'syncGuestCart']);
@@ -222,20 +232,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 
-// Route::prefix('cart')->group(function () {
-//     // Public routes (guest + authenticated both work)
-//     Route::get('/', [CartController::class, 'index']);
-//     Route::get('/summary', [CartController::class, 'summary']);
-//     Route::post('/add', [CartController::class, 'addItem']);
-//     Route::put('/items/{cartItemId}', [CartController::class, 'updateItem']);
-//     Route::delete('/items/{cartItemId}', [CartController::class, 'removeItem']);
-//     Route::post('/clear', [CartController::class, 'clear']);
-//     Route::post('/items/{cartItemId}/save-for-later', [CartController::class, 'saveForLater']);
-//     Route::post('/items/{cartItemId}/move-to-cart', [CartController::class, 'moveToCart']);
-    
-//     // Sync endpoint (authenticated only - requires token)
-//     Route::middleware(['auth:sanctum'])->post('/sync', [CartController::class, 'sync']);
-// });
+// Public routes (guest + authenticated both work)
+Route::prefix('cart')->group(function () {
+    Route::get('/', [CartController::class, 'index']);
+    Route::get('/summary', [CartController::class, 'summary']);
+    Route::post('/add', [CartController::class, 'addItem']);
+    Route::put('/items/{cartItemId}', [CartController::class, 'updateItem']);
+    Route::delete('/items/{cartItemId}', [CartController::class, 'removeItem']);
+    Route::post('/clear', [CartController::class, 'clear']);
+    Route::post('/items/{cartItemId}/save-for-later', [CartController::class, 'saveForLater']);
+    Route::post('/items/{cartItemId}/move-to-cart', [CartController::class, 'moveToCart']);
+});
 
 
 // ============ CHECKOUT ROUTES ============
@@ -243,3 +250,4 @@ Route::middleware(['auth:sanctum'])->prefix('checkout')->group(function () {
     Route::get('/summary', [CheckoutController::class, 'summary']);
     Route::post('/process', [CheckoutController::class, 'process']);
 });
+
