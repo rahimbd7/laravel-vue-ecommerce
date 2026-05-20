@@ -48,6 +48,7 @@ Route::prefix('v1')->group(function () {
     Route::prefix('products')->group(function () {
         Route::get('/', [ProductController::class, 'index']);
         Route::get('{product}', [ProductController::class, 'show']);
+        Route::get('slug/{slug}', [ProductController::class, 'getBySlug']);
         Route::get('{product}/related', [ProductController::class, 'related']);
 
         // Public review routes

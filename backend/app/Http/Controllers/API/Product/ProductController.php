@@ -91,7 +91,7 @@ class ProductController extends Controller {
             'approvedReviews' => fn($q) => $q->latest()->limit(10)->with('user'),
         ]);
 
-        $product->increment('view_count');
+        $product->increment('review_count');
 
         $stats = $this->reviewService->getReviewStats($product);
 
@@ -102,6 +102,36 @@ class ProductController extends Controller {
             'message' => 'Product retrieved successfully',
         ]);
     }
+
+    /* Get Product by slug */
+    /**
+ * Get product by slug (public frontend)
+ */
+public function getBySlug(string $slug): JsonResponse
+{
+    try {
+        $product = $this->productService->getBySlug($slug);
+
+        if (!$product) {
+            return $this->errorResponse('Product not found', 404);
+        }
+
+        $product->load([
+            'approvedReviews' => fn($q) => $q->latest()->limit(10)->with('user'),
+        ]);
+
+        $stats = $this->reviewService->getReviewStats($product);
+
+        return response()->json([
+            'success' => true,
+            'data' => new ProductResource($product),
+            'meta' => ['review_stats' => $stats],
+            'message' => 'Product retrieved successfully',
+        ]);
+    } catch (\Exception $e) {
+        return $this->errorResponse($e->getMessage(), 500);
+    }
+}
 
     /**
      * Update product

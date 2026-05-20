@@ -6,8 +6,7 @@ namespace App\Services;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 
-class ProductService
-{
+class ProductService {
     protected $imageService;
     protected $variationService;
     protected $reviewService;
@@ -17,16 +16,15 @@ class ProductService
         ProductVariationService $variationService,
         ProductReviewService $reviewService
     ) {
-        $this->imageService = $imageService;
+        $this->imageService     = $imageService;
         $this->variationService = $variationService;
-        $this->reviewService = $reviewService;
+        $this->reviewService    = $reviewService;
     }
 
     /**
      * Create product with all relations
      */
-    public function create(array $data, array $images = [], array $variations = [])
-    {
+    public function create(array $data, array $images = [], array $variations = []) {
         return DB::transaction(function () use ($data, $images, $variations) {
             // Generate SKU if not provided
             if (empty($data['sku'])) {
@@ -37,12 +35,12 @@ class ProductService
             $product = Product::create($data);
 
             // Handle images
-            if (!empty($images)) {
+            if (! empty($images)) {
                 $this->imageService->attachToProduct($product, $images);
             }
 
             // Handle variations
-            if (!empty($variations) && ($data['has_variations'] ?? false)) {
+            if (! empty($variations) && ($data['has_variations'] ?? false)) {
                 foreach ($variations as $variationData) {
                     $this->variationService->createForProduct($product, $variationData);
                 }
@@ -59,22 +57,21 @@ class ProductService
     /**
      * Update product
      */
-    public function update(Product $product, array $data, array $images = [], array $variations = [])
-    {
+    public function update(Product $product, array $data, array $images = [], array $variations = []) {
         return DB::transaction(function () use ($product, $data, $images, $variations) {
             // Update product
             $product->update($data);
 
             // Handle images
-            if (!empty($images)) {
+            if (! empty($images)) {
                 $this->imageService->syncForProduct($product, $images);
             }
 
             // Handle variations
             if (isset($data['has_variations'])) {
-                if ($data['has_variations'] && !empty($variations)) {
+                if ($data['has_variations'] && ! empty($variations)) {
                     $this->variationService->bulkUpdate($product, $variations);
-                } elseif (!$data['has_variations']) {
+                } elseif (! $data['has_variations']) {
                     $product->variations()->delete();
                 }
             }
@@ -92,8 +89,7 @@ class ProductService
     /**
      * Delete product
      */
-    public function delete(Product $product, $force = false)
-    {
+    public function delete(Product $product, $force = false) {
         return DB::transaction(function () use ($product, $force) {
             // Delete images from storage
             foreach ($product->images as $image) {
@@ -111,8 +107,7 @@ class ProductService
     /**
      * Search products with filters
      */
-    public function search(array $filters = [], $perPage = 15)
-    {
+    public function search(array $filters = [], $perPage = 15) {
         $query = Product::query()
             ->with(['primaryImage', 'category', 'vendor'])
             ->withCount(['reviews as approved_reviews_count' => function ($q) {
@@ -126,15 +121,15 @@ class ProductService
             $query->visible();
         }
 
-        if (!empty($filters['category_id'])) {
+        if (! empty($filters['category_id'])) {
             $query->byCategory($filters['category_id']);
         }
 
-        if (!empty($filters['vendor_id'])) {
+        if (! empty($filters['vendor_id'])) {
             $query->byVendor($filters['vendor_id']);
         }
 
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $query->search($filters['search']);
         }
 
@@ -146,33 +141,33 @@ class ProductService
             $query->where('price', '<=', $filters['max_price']);
         }
 
-        if (!empty($filters['tags'])) {
+        if (! empty($filters['tags'])) {
             $query->whereJsonContains('tags', $filters['tags']);
         }
 
-        if (!empty($filters['in_stock'])) {
+        if (! empty($filters['in_stock'])) {
             $query->inStock();
         }
 
-        if (!empty($filters['featured'])) {
+        if (! empty($filters['featured'])) {
             $query->featured();
         }
 
-        if (!empty($filters['has_variations'])) {
+        if (! empty($filters['has_variations'])) {
             $query->where('has_variations', true);
         }
 
         // Sorting
-        $sortBy = $filters['sort_by'] ?? 'created_at';
+        $sortBy    = $filters['sort_by'] ?? 'created_at';
         $sortOrder = $filters['sort_order'] ?? 'desc';
 
         $allowedSorts = [
-            'price' => 'price',
+            'price'      => 'price',
             'created_at' => 'created_at',
-            'name' => 'name',
+            'name'       => 'name',
             'popularity' => 'sold_count',
-            'rating' => 'average_rating',
-            'newest' => 'created_at',
+            'rating'     => 'average_rating',
+            'newest'     => 'created_at',
         ];
 
         if (isset($allowedSorts[$sortBy])) {
@@ -181,12 +176,25 @@ class ProductService
 
         return $query->paginate($perPage);
     }
-
+    /**
+     * Get product by slug
+     */
+    public function getBySlug(string $slug): ?Product {
+        return Product::query()
+            ->visible()
+            ->where('slug', $slug)
+            ->with([
+                'images'     => fn($q)     => $q->ordered(),
+                'variations' => fn($q) => $q->visible()->ordered()->with('image'),
+                'category',
+                'vendor',
+            ])
+            ->first();
+    }
     /**
      * Get related products
      */
-    public function getRelatedProducts(Product $product, $limit = 10)
-    {
+    public function getRelatedProducts(Product $product, $limit = 10) {
         $tags = collect($product->tags ?? [])
             ->filter(fn($tag) => is_string($tag) && trim($tag) !== '')
             ->map(fn($tag) => trim($tag))
@@ -209,7 +217,7 @@ class ProductService
         $query->where(function ($q) use ($product, $tags, $nameTokens) {
             $q->where('category_id', $product->category_id);
 
-            if (!empty($tags)) {
+            if (! empty($tags)) {
                 $q->orWhere(function ($tagQuery) use ($tags) {
                     foreach ($tags as $tag) {
                         $tagQuery->orWhereJsonContains('tags', $tag);
@@ -217,7 +225,7 @@ class ProductService
                 });
             }
 
-            if (!empty($nameTokens)) {
+            if (! empty($nameTokens)) {
                 $q->orWhere(function ($nameQuery) use ($nameTokens) {
                     foreach ($nameTokens as $token) {
                         $like = '%' . $token . '%';
@@ -229,16 +237,16 @@ class ProductService
         });
 
         // Weighted ranking for deterministic, high-quality related results.
-        $scoreParts = ["(case when category_id = ? then 60 else 0 end)"];
+        $scoreParts    = ["(case when category_id = ? then 60 else 0 end)"];
         $scoreBindings = [$product->category_id];
 
         foreach ($tags as $tag) {
-            $scoreParts[] = "(case when JSON_CONTAINS(tags, JSON_QUOTE(?)) then 20 else 0 end)";
+            $scoreParts[]    = "(case when JSON_CONTAINS(tags, JSON_QUOTE(?)) then 20 else 0 end)";
             $scoreBindings[] = $tag;
         }
 
         foreach ($nameTokens as $token) {
-            $scoreParts[] = "(case when name like ? or slug like ? then 10 else 0 end)";
+            $scoreParts[]    = "(case when name like ? or slug like ? then 10 else 0 end)";
             $scoreBindings[] = '%' . $token . '%';
             $scoreBindings[] = '%' . $token . '%';
         }
@@ -253,7 +261,7 @@ class ProductService
             ->selectRaw($scoreSql, $scoreBindings)
             ->orderByDesc('relevance_score')
             ->orderByDesc('sold_count')
-            ->orderByDesc('view_count')
+            ->orderByDesc('review_count')
             ->orderByDesc('average_rating')
             ->orderByDesc('created_at')
             ->limit($limit)
@@ -263,10 +271,9 @@ class ProductService
     /**
      * Generate unique SKU
      */
-    protected function generateSku($name)
-    {
-        $base = 'PRD-' . strtoupper(preg_replace('/[^A-Za-z0-9]/', '', substr($name, 0, 10)));
-        $sku = $base;
+    protected function generateSku($name) {
+        $base    = 'PRD-' . strtoupper(preg_replace('/[^A-Za-z0-9]/', '', substr($name, 0, 10)));
+        $sku     = $base;
         $counter = 1;
 
         while (Product::where('sku', $sku)->exists()) {
@@ -280,8 +287,7 @@ class ProductService
     /**
      * Bulk update products
      */
-    public function bulkUpdate(array $productIds, array $data)
-    {
+    public function bulkUpdate(array $productIds, array $data) {
         return DB::transaction(function () use ($productIds, $data) {
             return Product::whereIn('id', $productIds)->update($data);
         });
@@ -290,8 +296,7 @@ class ProductService
     /**
      * Get product statistics
      */
-    public function getStats($vendorId = null)
-    {
+    public function getStats($vendorId = null) {
         $query = Product::query();
 
         if ($vendorId) {
@@ -299,15 +304,15 @@ class ProductService
         }
 
         return [
-            'total' => $query->count(),
-            'active' => (clone $query)->where('is_visible', true)->count(),
-            'out_of_stock' => (clone $query)->where('stock_status', 'out_of_stock')->count(),
-            'low_stock' => (clone $query)->where('stock_status', 'low_stock')->count(),
-            'featured' => (clone $query)->where('is_featured', true)->count(),
+            'total'           => $query->count(),
+            'active'          => (clone $query)->where('is_visible', true)->count(),
+            'out_of_stock'    => (clone $query)->where('stock_status', 'out_of_stock')->count(),
+            'low_stock'       => (clone $query)->where('stock_status', 'low_stock')->count(),
+            'featured'        => (clone $query)->where('is_featured', true)->count(),
             'with_variations' => (clone $query)->where('has_variations', true)->count(),
-            'average_price' => (clone $query)->avg('price'),
-            'total_value' => (clone $query)->sum(DB::raw('price * stock_quantity')),
-            'recent_added' => (clone $query)->where('created_at', '>=', now()->subDays(7))->count(),
+            'average_price'   => (clone $query)->avg('price'),
+            'total_value'     => (clone $query)->sum(DB::raw('price * stock_quantity')),
+            'recent_added'    => (clone $query)->where('created_at', '>=', now()->subDays(7))->count(),
         ];
     }
 }
