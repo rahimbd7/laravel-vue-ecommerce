@@ -1,12 +1,16 @@
 <?php
 namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
+
+
 
 class User extends Authenticatable {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -84,5 +88,33 @@ class User extends Authenticatable {
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
         ];
+    }
+
+    //wishlist relationship
+    public function wishlist(): HasMany
+    {
+        return $this->hasMany(Wishlist::class, 'user_uuid', 'uuid');
+    }
+
+    public function wishlistProducts(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Product::class,
+            Wishlist::class,
+            'user_uuid',
+            'id',
+            'uuid',
+            'product_id'
+        );
+    }
+
+    public function getWishlistCountAttribute(): int
+    {
+        return $this->wishlist()->count();
+    }
+
+    public function isInWishlist(int $productId): bool
+    {
+        return $this->wishlist()->where('product_id', $productId)->exists();
     }
 }

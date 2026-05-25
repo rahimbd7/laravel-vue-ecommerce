@@ -13,7 +13,9 @@ use App\Services\ProductService;
 use App\Services\ProductVariationService;
 use App\Services\VendorService;
 use App\Services\ProfileService;
+use App\Services\WishlistService;
 use Illuminate\Support\ServiceProvider;
+
 
 
 class AppServiceProvider extends ServiceProvider
@@ -38,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton (CartService::class);
         $this->app->singleton (CheckoutService::class);
         $this->app->singleton (ProfileService::class);
+        $this->app->singleton (WishlistService::class);
     }
 
     /**

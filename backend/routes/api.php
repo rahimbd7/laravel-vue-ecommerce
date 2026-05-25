@@ -14,6 +14,7 @@ use App\Http\Controllers\API\Product\ProductVariationController;
 use App\Http\Controllers\API\Profile\ProfileController;
 use App\Http\Controllers\API\Vendor\VendorApplicationController;
 use App\Http\Controllers\API\Vendor\VendorController;
+use App\Http\Controllers\Api\WishList\WishlistController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -92,6 +93,18 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 });
 
 
+Route::middleware(['auth:sanctum'])->group(function () {
+    // Wishlist Routes
+    Route::prefix('wishlist')->group(function () {
+        Route::get('/', [WishlistController::class, 'index']);           // Get wishlist
+        Route::post('/add', [WishlistController::class, 'store']);       // Add to wishlist
+        Route::delete('/remove/{productId}', [WishlistController::class, 'destroy']); // Remove from wishlist
+        Route::post('/toggle', [WishlistController::class, 'toggle']);   // Toggle wishlist
+        Route::get('/check/{productId}', [WishlistController::class, 'check']); // Check if in wishlist
+        Route::get('/count', [WishlistController::class, 'count']);      // Get wishlist count
+        Route::delete('/clear', [WishlistController::class, 'clear']);   // Clear wishlist
+    });
+});
 
 
 
