@@ -8,14 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-class Product extends Model
-{
+class Product extends Model {
     use HasFactory, SoftDeletes;
 
     protected $table = 'products';
 
     protected $fillable = [
-        'uuid',
         'vendor_id',
         'category_id',
         'name',
@@ -25,7 +23,6 @@ class Product extends Model
         'sku',
         'stock_quantity',
         'stock_status',
-        'low_stock_threshold',
         'price',
         'compare_price',
         'cost_per_item',
@@ -44,30 +41,28 @@ class Product extends Model
         'attributes',
         'tags',
         'sold_count',
-        'view_count',
         'average_rating',
         'review_count',
     ];
 
     protected $casts = [
-        'uuid' => 'string',
-        'price' => 'decimal:2',
-        'compare_price' => 'decimal:2',
-        'cost_per_item' => 'decimal:2',
-        'tax_rate' => 'decimal:2',
-        'weight' => 'decimal:2',
-        'is_visible' => 'boolean',
-        'is_featured' => 'boolean',
+        'price'          => 'decimal:2',
+        'compare_price'  => 'decimal:2',
+        'cost_per_item'  => 'decimal:2',
+        'tax_rate'       => 'decimal:2',
+        'weight'         => 'decimal:2',
+        'is_visible'     => 'boolean',
+        'is_featured'    => 'boolean',
         'has_variations' => 'boolean',
-        'is_taxable' => 'boolean',
-        'free_shipping' => 'boolean',
-        'meta_keywords' => 'array',
-        'attributes' => 'array',
-        'tags' => 'array',
+        'is_taxable'     => 'boolean',
+        'free_shipping'  => 'boolean',
+        'meta_keywords'  => 'array',
+        'attributes'     => 'array',
+        'tags'           => 'array',
         'average_rating' => 'decimal:2',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-        'deleted_at' => 'datetime',
+        'created_at'     => 'datetime',
+        'updated_at'     => 'datetime',
+        'deleted_at'     => 'datetime',
     ];
 
     protected $appends = [
@@ -82,24 +77,17 @@ class Product extends Model
         'dimensions_array',
     ];
 
-    protected static function boot()
-    {
+    protected static function boot() {
         parent::boot();
 
         static::creating(function ($product) {
-            if (empty($product->uuid)) {
-                $product->uuid = (string) Str::uuid();
-            }
             if (empty($product->slug)) {
                 $product->slug = Str::slug($product->name);
-            }
-            if (empty($product->low_stock_threshold)) {
-                $product->low_stock_threshold = 5;
             }
         });
 
         static::updating(function ($product) {
-            if ($product->isDirty('name') && !$product->isDirty('slug')) {
+            if ($product->isDirty('name') && ! $product->isDirty('slug')) {
                 $product->slug = Str::slug($product->name);
             }
         });
@@ -108,109 +96,91 @@ class Product extends Model
     /**
      * Relationships
      */
-    public function vendor()
-    {
+    public function vendor() {
         return $this->belongsTo(Vendor::class);
     }
 
-    public function category()
-    {
+    public function category() {
         return $this->belongsTo(Category::class);
     }
 
-    public function images()
-    {
+    public function images() {
         return $this->hasMany(ProductImage::class)->orderBy('order');
     }
 
-    public function primaryImage()
-    {
+    public function primaryImage() {
         return $this->hasOne(ProductImage::class)->where('is_primary', true);
     }
 
-    public function variations()
-    {
+    public function variations() {
         return $this->hasMany(ProductVariation::class);
     }
 
-    public function defaultVariation()
-    {
+    public function defaultVariation() {
         return $this->hasOne(ProductVariation::class)->where('is_default', true);
     }
 
-    public function reviews()
-    {
+    public function reviews() {
         return $this->hasMany(ProductReview::class);
     }
 
-    public function approvedReviews()
-    {
+    public function approvedReviews() {
         return $this->hasMany(ProductReview::class)->where('is_approved', true);
     }
 
     /**
      * Scopes
      */
-    public function scopeVisible($query)
-    {
+    public function scopeVisible($query) {
         return $query->where('is_visible', true);
     }
 
-    public function scopeFeatured($query)
-    {
+    public function scopeFeatured($query) {
         return $query->where('is_featured', true);
     }
 
-    public function scopeInStock($query)
-    {
+    public function scopeInStock($query) {
         return $query->whereIn('stock_status', ['in_stock', 'low_stock']);
     }
 
-    public function scopeByVendor($query, $vendorId)
-    {
+    public function scopeByVendor($query, $vendorId) {
         return $query->where('vendor_id', $vendorId);
     }
 
-    public function scopeByCategory($query, $categoryId)
-    {
+    public function scopeByCategory($query, $categoryId) {
         return $query->where('category_id', $categoryId);
     }
 
-    public function scopeSearch($query, $term)
-    {
-        return $query->where(function($q) use ($term) {
+    public function scopeSearch($query, $term) {
+        return $query->where(function ($q) use ($term) {
             $q->where('name', 'LIKE', "%{$term}%")
-              ->orWhere('description', 'LIKE', "%{$term}%")
-              ->orWhere('sku', 'LIKE', "%{$term}%");
+                ->orWhere('description', 'LIKE', "%{$term}%")
+                ->orWhere('sku', 'LIKE', "%{$term}%");
         });
     }
 
     /**
      * Accessors
      */
-    public function getFinalPriceAttribute()
-    {
+    public function getFinalPriceAttribute() {
         if ($this->compare_price && $this->compare_price > $this->price) {
             return $this->compare_price;
         }
         return $this->price;
     }
 
-    public function getDiscountPercentageAttribute()
-    {
+    public function getDiscountPercentageAttribute() {
         if ($this->compare_price && $this->compare_price > $this->price) {
             return round((($this->compare_price - $this->price) / $this->compare_price) * 100);
         }
         return 0;
     }
 
-    public function getIsOnSaleAttribute()
-    {
+    public function getIsOnSaleAttribute() {
         return $this->compare_price && $this->compare_price > $this->price;
     }
 
-    public function getThumbnailAttribute()
-    {
+    public function getThumbnailAttribute() {
         $primary = $this->primaryImage;
         if ($primary && $primary->thumbnail_url) {
             return $primary->thumbnail_url;
@@ -219,8 +189,7 @@ class Product extends Model
         return $firstImage?->thumbnail_url ?? asset('images/no-image.jpg');
     }
 
-    public function getImageUrlAttribute()
-    {
+    public function getImageUrlAttribute() {
         $primary = $this->primaryImage;
         if ($primary && $primary->image_url) {
             return $primary->image_url;
@@ -229,35 +198,31 @@ class Product extends Model
         return $firstImage?->image_url ?? asset('images/no-image.jpg');
     }
 
-    public function getStockStatusLabelAttribute()
-    {
-        return match($this->stock_status) {
-            'in_stock' => 'In Stock',
-            'low_stock' => 'Low Stock',
+    public function getStockStatusLabelAttribute() {
+        return match ($this->stock_status) {
+            'in_stock'     => 'In Stock',
+            'low_stock'    => 'Low Stock',
             'out_of_stock' => 'Out of Stock',
-            'backorder' => 'Available on Backorder',
-            default => ucfirst(str_replace('_', ' ', $this->stock_status))
+            'backorder'    => 'Available on Backorder',
+            default        => ucfirst(str_replace('_', ' ', $this->stock_status))
         };
     }
 
-    public function getFormattedPriceAttribute()
-    {
+    public function getFormattedPriceAttribute() {
         return '$' . number_format($this->price, 2);
     }
 
-    public function getShippingTypeLabelAttribute()
-    {
+    public function getShippingTypeLabelAttribute() {
         return match ($this->shipping_type) {
             'physical' => 'Physical Product',
-            'digital' => 'Digital Product',
-            'service' => 'Service',
-            default => ucfirst((string) $this->shipping_type),
+            'digital'  => 'Digital Product',
+            'service'  => 'Service',
+            default    => ucfirst((string) $this->shipping_type),
         };
     }
 
-    public function getDimensionsArrayAttribute()
-    {
-        if (empty($this->dimensions) || !str_contains($this->dimensions, 'x')) {
+    public function getDimensionsArrayAttribute() {
+        if (empty($this->dimensions) || ! str_contains($this->dimensions, 'x')) {
             return null;
         }
 
@@ -268,33 +233,32 @@ class Product extends Model
 
         return [
             'length' => (float) $parts[0],
-            'width' => (float) $parts[1],
+            'width'  => (float) $parts[1],
             'height' => (float) $parts[2],
-            'unit' => 'cm',
+            'unit'   => 'cm',
         ];
     }
 
     /**
      * Helper Methods
      */
-    public function isInStock()
-    {
+    public function isInStock() {
         return in_array($this->stock_status, ['in_stock', 'low_stock']);
     }
 
-    public function hasStock($quantity = 1)
-    {
+    public function hasStock($quantity = 1) {
         if ($this->has_variations) {
             return $this->variations()->sum('stock_quantity') >= $quantity;
         }
         return $this->stock_quantity >= $quantity;
     }
 
-    public function updateStockStatus()
-    {
+    public function updateStockStatus() {
+        $threshold = $this->low_stock_threshold ?? 5;
+
         if ($this->stock_quantity <= 0) {
             $this->stock_status = 'out_of_stock';
-        } elseif ($this->stock_quantity <= $this->low_stock_threshold) {
+        } elseif ($this->stock_quantity <= $threshold) {
             $this->stock_status = 'low_stock';
         } else {
             $this->stock_status = 'in_stock';
@@ -302,16 +266,14 @@ class Product extends Model
         $this->saveQuietly();
     }
 
-    public function updateRating()
-    {
-        $query = $this->reviews()->where('is_approved', true);
-        $this->review_count = $query->count();
+    public function updateRating() {
+        $query                = $this->reviews()->where('is_approved', true);
+        $this->review_count   = $query->count();
         $this->average_rating = $query->avg('rating') ?: 0;
         $this->saveQuietly();
     }
 
-    public function getTotalStock()
-    {
+    public function getTotalStock() {
         if ($this->has_variations) {
             return (int) $this->variations()->sum('stock_quantity');
         }
@@ -319,18 +281,17 @@ class Product extends Model
         return (int) $this->stock_quantity;
     }
 
-    public function syncVariationPrices()
-    {
-        if (!$this->has_variations) {
+    public function syncVariationPrices() {
+        if (! $this->has_variations) {
             return $this;
         }
 
         $visibleVariations = $this->variations()->where('is_visible', true);
 
-        $lowest = $visibleVariations->min('price');
+        $lowest     = $visibleVariations->min('price');
         $totalStock = (int) $visibleVariations->sum('stock_quantity');
 
-        if (!is_null($lowest)) {
+        if (! is_null($lowest)) {
             $this->price = $lowest;
         }
 
@@ -341,17 +302,15 @@ class Product extends Model
         return $this;
     }
 
-    public function getLowestPrice()
-    {
-        if (!$this->has_variations) {
+    public function getLowestPrice() {
+        if (! $this->has_variations) {
             return $this->price;
         }
         return $this->variations()->where('is_visible', true)->min('price') ?? $this->price;
     }
 
-    public function getHighestPrice()
-    {
-        if (!$this->has_variations) {
+    public function getHighestPrice() {
+        if (! $this->has_variations) {
             return $this->price;
         }
         return $this->variations()->where('is_visible', true)->max('price') ?? $this->price;
