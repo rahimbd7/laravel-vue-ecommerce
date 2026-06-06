@@ -24,7 +24,7 @@ class AuthController extends Controller {
             $user  = $this->authService->register($data);
             $token = $user->createToken('auth_token')->plainTextToken;
             DB::commit();
-            return $this->authResponse($user = new UserResource($user), $token, 'User registered successfully', 201);
+            return $this->authResponse($user = new UserResource($user),'Bearer', $token, 'User registered successfully', 201);
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->errorResponse('Registration failed: ' . $e->getMessage(), 500);
