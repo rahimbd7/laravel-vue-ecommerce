@@ -74,7 +74,7 @@
               </router-link>
 
               <router-link 
-                to="/orders" 
+                to="dashboard/customer/orders" 
                 class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
                 @click="closeDropdown"
               >
@@ -85,7 +85,7 @@
               </router-link>
 
               <router-link 
-                to="/profile" 
+                to="dashboard/customer/profile" 
                 class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
                 @click="closeDropdown"
               >
@@ -171,13 +171,13 @@
               </div>
             </div>
             
-            <router-link to="/dashboard" @click="mobileMenuOpen = false" class="flex items-center gap-2 text-gray-600 hover:text-[#00685F] py-1">
+            <router-link to="dashboard" @click="mobileMenuOpen = false" class="flex items-center gap-2 text-gray-600 hover:text-[#00685F] py-1">
               Dashboard
             </router-link>
-            <router-link to="/orders" @click="mobileMenuOpen = false" class="flex items-center gap-2 text-gray-600 hover:text-[#00685F] py-1">
+            <router-link to="dashboard/customer/orders" @click="mobileMenuOpen = false" class="flex items-center gap-2 text-gray-600 hover:text-[#00685F] py-1">
               My Orders
             </router-link>
-            <router-link to="/profile" @click="mobileMenuOpen = false" class="flex items-center gap-2 text-gray-600 hover:text-[#00685F] py-1">
+            <router-link to="dashboard/customer/profile" @click="mobileMenuOpen = false" class="flex items-center gap-2 text-gray-600 hover:text-[#00685F] py-1">
               Profile
             </router-link>
             

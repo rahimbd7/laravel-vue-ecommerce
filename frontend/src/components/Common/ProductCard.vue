@@ -1,4 +1,3 @@
-<!-- components/products/ProductCard.vue -->
 <template>
   <div class="group relative bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden">
     <!-- Sale Badge -->
@@ -22,11 +21,14 @@
 
     <!-- Wishlist Button -->
     <button 
-      @click="$emit('toggle-wishlist', product)"
-      class="absolute top-3 right-3 z-10 bg-white rounded-full p-2 shadow-md hover:bg-red-50 transition group/wishlist"
+      @click="toggleWishlist"
+      :disabled="wishlistLoading"
+      class="absolute top-3 right-3 z-10 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition disabled:opacity-50"
+      :class="isInWishlist ? 'bg-red-50' : 'hover:bg-red-50'"
     >
       <svg 
-        class="w-4 h-4 text-gray-500 group-hover/wishlist:text-red-500 transition" 
+        class="w-4 h-4 transition"
+        :class="isInWishlist ? 'text-red-500 fill-red-500' : 'text-gray-500 group-hover:text-red-500'"
         fill="none" 
         stroke="currentColor" 
         viewBox="0 0 24 24"
@@ -54,12 +56,12 @@
     <!-- Product Info -->
     <div class="p-4">
       <router-link :to="`/product/${product.slug}`">
-        <h3 class="font-semibold text-gray-800 hover:text-blue-600 transition line-clamp-2 min-h-[56px]">
+        <h3 class="font-semibold text-gray-800 hover:text-[#00685F] transition line-clamp-2 min-h-[56px]">
           {{ product.name }}
         </h3>
       </router-link>
 
-      <!-- Rating - Whole stars only -->
+      <!-- Rating -->
       <div class="flex items-center gap-1 mt-2">
         <div class="flex items-center">
           <span v-for="i in 5" :key="i" class="text-sm">
@@ -86,7 +88,7 @@
         :disabled="product.inventory?.status === 'out_of_stock'"
         class="mt-4 w-full py-2 rounded-lg font-medium transition"
         :class="product.inventory?.status !== 'out_of_stock'
-          ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95' 
+          ? 'bg-[#00685F] text-white hover:bg-[#004F45] active:scale-95' 
           : 'bg-gray-300 text-gray-500 cursor-not-allowed'"
       >
         {{ product.inventory?.status === 'out_of_stock' ? 'Out of Stock' : 'Add to Cart' }}
@@ -96,20 +98,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { useToast } from 'primevue/usetoast'
+import api from '@/api/api'
 import type { Product } from '@/types/models/product.types'
 
 const props = defineProps<{
   product: Product
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'add-to-cart', product: Product): void
-  (e: 'toggle-wishlist', product: Product): void
+  (e: 'wishlist-updated'): void
 }>()
+
+const toast = useToast()
 
 // Image error handling
 const imageError = ref(false)
+const isInWishlist = ref(false)
+const wishlistLoading = ref(false)
 
 // Base URL for storage
 const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8000'
@@ -122,12 +130,10 @@ const productImage = computed(() => {
   
   if (!imagePath) return null
   
-  // If it's already a full URL
   if (imagePath.startsWith('http')) {
     return imagePath
   }
   
-  // Build full URL
   return `${baseUrl}/storage/${imagePath}`
 })
 
@@ -135,4 +141,53 @@ const handleImageError = () => {
   imageError.value = true
 }
 
+// Check if product is in wishlist
+const checkWishlistStatus = async () => {
+  try {
+    const response = await api.get(`/wishlist/check/${props.product.id}`)
+    isInWishlist.value = response.data.data.in_wishlist
+  } catch (error) {
+    console.error('Failed to check wishlist status:', error)
+  }
+}
+
+// Toggle wishlist
+const toggleWishlist = async () => {
+  if (wishlistLoading.value) return
+  
+  wishlistLoading.value = true
+  try {
+    const response = await api.post('/wishlist/toggle', { 
+      product_id: props.product.id 
+    })
+    
+    const { status, message } = response.data.data
+    
+    isInWishlist.value = status === 'added'
+    
+    toast.add({
+      severity: 'success',
+      summary: status === 'added' ? 'Added to Wishlist' : 'Removed from Wishlist',
+      detail: message,
+      life: 3000
+    })
+    
+    // Emit event to parent to refresh wishlist count if needed
+    emit('wishlist-updated')
+    
+  } catch (error: any) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: error.response?.data?.message || 'Failed to update wishlist',
+      life: 3000
+    })
+  } finally {
+    wishlistLoading.value = false
+  }
+}
+
+onMounted(() => {
+  checkWishlistStatus()
+})
 </script>

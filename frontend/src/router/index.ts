@@ -86,7 +86,7 @@ import { useAuthStore } from "@/stores/auth.store";
 // Import route modules
 import { publicRoutes } from "./routes/public.route";
 import { authRoutes } from "./routes/auth.route";
-import { orderRoutes } from "./routes/order.route";
+// import { orderRoutes } from "./routes/order.route";
 import { dashboardRoutes } from "./routes/dashboard";
 
 declare module 'vue-router' {
@@ -100,7 +100,7 @@ declare module 'vue-router' {
 const routes: RouteRecordRaw[] = [
   ...publicRoutes, 
   ...authRoutes, 
-  ...orderRoutes, 
+  // ...orderRoutes, 
   ...dashboardRoutes
 ];
 

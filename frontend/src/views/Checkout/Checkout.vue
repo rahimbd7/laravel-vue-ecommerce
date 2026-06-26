@@ -361,7 +361,6 @@ const placeOrder = async () => {
       payment_method: form.payment_method,
       notes: form.notes
     })
-    console.log('Order Response:', response.data)
     if (response.data.status === 'success') {
       await Swal.fire({ icon: 'success', title: 'Order Placed!', text: 'Your order has been placed successfully', confirmButtonColor: '#00685F' })
       await cartStore.clear()

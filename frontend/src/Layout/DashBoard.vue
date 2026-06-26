@@ -44,9 +44,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
+import { useCustomerDashboardStore } from '@/stores/DashboardStore/Customer/dashboard.customer.store'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 
@@ -57,14 +58,34 @@ import Button from 'primevue/button'
 import SplitButton from 'primevue/splitbutton'
 import Avatar from 'primevue/avatar'
 import Badge from 'primevue/badge'
-// import Toast from 'primevue/toast'
+import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const dashboardStore = useCustomerDashboardStore()
 const toast = useToast()
 const confirm = useConfirm()
+
+// ✅ Initialize dashboard data when authenticated
+onMounted(async () => {
+  if (authStore.isAuthenticated) {
+    await dashboardStore.initialize()
+  }
+})
+
+// ✅ Watch for login state changes
+watch(
+  () => authStore.isAuthenticated,
+  async (isAuthenticated) => {
+    if (isAuthenticated && !dashboardStore.isInitialized) {
+      await dashboardStore.initialize()
+    } else if (!isAuthenticated) {
+      dashboardStore.resetAll()
+    }
+  }
+)
 
 const appName = computed(() => {
   const role = authStore.user?.role || 'customer'
@@ -86,25 +107,49 @@ const dashboardPath = computed(() => {
   return paths[role] || '/dashboard/customer'
 })
 
-const userName = computed(() => authStore.user?.name || 'User')
+// ✅ Get user details from auth store
+const userName = computed(() => authStore.userName)
 const userRole = computed(() => authStore.user?.role || 'customer')
+
+// ✅ Compute user initials from auth store user name
 const userInitials = computed(() => {
-  return userName.value.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  const name = authStore.user?.name || 'User'
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 })
+
+// Helper function to get orders path
+const getOrdersPath = () => {
+  const role = authStore.user?.role || 'customer'
+  const paths: Record<string, string> = {
+    admin: '/dashboard/admin/orders',
+    vendor: '/dashboard/vendor/orders',
+    customer: '/dashboard/customer/orders'
+  }
+  return paths[role] || '/dashboard/customer/orders'
+}
 
 // Top Menu Items
 const menuItems = ref([
   { label: 'Dashboard', icon: 'pi pi-home', to: dashboardPath.value },
   { label: 'Shop', icon: 'pi pi-shopping-bag', to: '/shop' },
-  { label: 'Orders', icon: 'pi pi-shopping-cart', to: '/orders' }
+  { label: 'Orders', icon: 'pi pi-shopping-cart', to: getOrdersPath() }
 ])
 
-// Watch for role changes to update dashboard path
-watch(() => authStore.user?.role, () => {
-  const path = dashboardPath.value
-  const item = menuItems.value.find(i => i.label === 'Dashboard')
-  if (item) item.to = path
-})
+// Watch for role changes to update menuItems
+watch(
+  () => authStore.user?.role,
+  () => {
+    const path = dashboardPath.value
+    const ordersPath = getOrdersPath()
+    
+    menuItems.value = [
+      { label: 'Dashboard', icon: 'pi pi-home', to: path },
+      { label: 'Shop', icon: 'pi pi-shopping-bag', to: '/shop' },
+      { label: 'Orders', icon: 'pi pi-shopping-cart', to: ordersPath }
+    ]
+  },
+  { immediate: true }
+)
 
 const showToast = (severity: string, summary: string, detail: string) => {
   toast.add({ severity, summary, detail, life: 3000 })
@@ -118,6 +163,7 @@ const handleLogout = () => {
     icon: 'pi pi-exclamation-triangle',
     accept: async () => {
       await authStore.logout()
+      dashboardStore.resetAll()
       router.push('/login')
       showToast('success', 'Logged Out', 'You have been logged out successfully')
     }
@@ -252,7 +298,7 @@ const panelMenuItems = computed(() => {
         icon: 'pi pi-user',
         items: [
           { label: 'My Profile', icon: 'pi pi-user-edit', to: '/dashboard/customer/profile', command: () => router.push('/dashboard/customer/profile') },
-          { label: 'Addresses', icon: 'pi pi-map-marker', to: '/dashboard/customer/addresses', command: () => router.push('/dashboard/customer/addresses') }
+          { label: 'Address', icon: 'pi pi-map-marker', to: '/dashboard/customer/address', command: () => router.push('/dashboard/customer/address') }
         ]
       },
       {
@@ -281,7 +327,6 @@ const panelMenuItems = computed(() => {
 
   return items
 })
-console.log(authStore.user, 'role')
 </script>
 
 <style scoped>
