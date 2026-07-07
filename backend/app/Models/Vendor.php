@@ -1,17 +1,15 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Vendor extends Model
-{
+class Vendor extends Model {
     /** @use HasFactory<\Database\Factories\VendorFactory> */
     use HasFactory, SoftDeletes;
     protected $fillable = [
-         'user_uuid',
+        'user_uuid',
         'business_name',
         'business_email',
         'business_phone',
@@ -24,11 +22,14 @@ class Vendor extends Model
         'rejected_at',
         'rejection_reason',
         'commission_rate',
+        'store_logo',
+        'shipping_settings',
     ];
 
     protected $casts = [
-        'is_verified' => 'boolean',
-        'commission_rate' => 'decimal:2',
+        'is_verified'       => 'boolean',
+        'commission_rate'   => 'decimal:2',
+        'shipping_settings' => 'array',
     ];
 
     //relationships
@@ -42,6 +43,16 @@ class Vendor extends Model
     public function scopeVerified($query) {
         return $query->where('is_verified', true);
     }
+    public function vendorPayouts() {
+        return $this->hasMany(VendorPayout::class);
+    } 
+    public function vendorBalance() {
+        return $this->hasOne(VendorBalance::class);
+    }
+    public function orders() {
+        return $this->hasMany(Order::class);
+    }
+ 
     public function scopePending($query) {
         return $query
             ->where('status', 'pending')
@@ -50,9 +61,9 @@ class Vendor extends Model
     }
     //helpers
     public function markAsVerified() {
-       $this->update(['is_verified' => true]);
+        $this->update(['is_verified' => true]);
     }
     public function reject() {
-       $this->delete();
+        $this->delete();
     }
 }

@@ -6,13 +6,19 @@ use App\Services\AuthService;
 use App\Services\CartService;
 use App\Services\CategoryService;
 use App\Services\CheckoutService;
+use App\Services\CommissionService;
 use App\Services\OrderService;
+use App\Services\PaymentService;
 use App\Services\ProductImageService;
 use App\Services\ProductReviewService;
 use App\Services\ProductService;
 use App\Services\ProductVariationService;
-use App\Services\VendorService;
 use App\Services\ProfileService;
+use App\Services\TransactionService;
+use App\Services\VendorDashboardService;
+use App\Services\VendorPayoutService;
+use App\Services\VendorProfileService;
+use App\Services\VendorService;
 use App\Services\WishlistService;
 use Illuminate\Support\ServiceProvider;
 
@@ -41,6 +47,14 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton (CheckoutService::class);
         $this->app->singleton (ProfileService::class);
         $this->app->singleton (WishlistService::class);
+        $this->app->singleton (VendorDashboardService::class);
+        $this->app->singleton (VendorProfileService::class);
+         $this->app->singleton(PaymentService::class);
+        $this->app->singleton(VendorPayoutService::class);
+        $this->app->singleton(TransactionService::class);
+        $this->app->singleton(CommissionService::class);
+
+
     }
 
     /**
