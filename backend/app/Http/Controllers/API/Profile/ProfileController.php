@@ -9,6 +9,7 @@ use App\Trait\ApiResponseTrait;
 use Illuminate\Http\Request;
 use App\Http\Requests\Profile\ProfileRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
 {
@@ -26,7 +27,7 @@ class ProfileController extends Controller
      */
     public function me()
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $profile = $this->profileService->getProfile($user);
         return $this->successResponse($profile, "Profile retrieved successfully");
     }
@@ -36,7 +37,7 @@ class ProfileController extends Controller
      */
     public function update(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $request->validate([
             'name' => 'sometimes|string|max:255',
@@ -62,7 +63,7 @@ class ProfileController extends Controller
     public function updateAvatar(ProfileRequest $request)
     {
 
-        $user = auth()->user();
+        $user = Auth::user();
         $result = $this->profileService->updateAvatar($user, $request->file('avatar'));
 
         return $this->successResponse($result, "Avatar updated successfully");
@@ -78,7 +79,7 @@ class ProfileController extends Controller
             'new_password' => 'required|string|min:8|confirmed',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
         $this->profileService->changePassword(
             $user,
             $request->current_password,
@@ -92,7 +93,7 @@ class ProfileController extends Controller
      */
     public function getAddress()
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $address = $this->profileService->getAddress($user);
 
         if (!$address) {
@@ -115,7 +116,7 @@ class ProfileController extends Controller
             'country' => 'nullable|string|max:3',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
         $address = $this->profileService->updateAddress($user, $request->all());
 
         return $this->successResponse($address, "Address updated successfully");

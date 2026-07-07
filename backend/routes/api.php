@@ -1,19 +1,24 @@
 <?php
 
 use App\Http\Controllers\API\Admin\AdminCategoryController;
+use App\Http\Controllers\API\Admin\AdminPayoutController;
 use App\Http\Controllers\API\Admin\AdminVendorController;
 use App\Http\Controllers\API\Auth\AuthController;
 use App\Http\Controllers\API\Cart\CartController;
 use App\Http\Controllers\API\Category\CategoryController;
 use App\Http\Controllers\API\Checkout\CheckoutController;
 use App\Http\Controllers\API\Order\OrderController;
+use App\Http\Controllers\API\Payment\PaymentController;
 use App\Http\Controllers\API\Product\ProductController;
 use App\Http\Controllers\API\Product\ProductImageController;
 use App\Http\Controllers\API\Product\ProductReviewController;
 use App\Http\Controllers\API\Product\ProductVariationController;
 use App\Http\Controllers\API\Profile\ProfileController;
+use App\Http\Controllers\API\Transaction\TransactionController;
 use App\Http\Controllers\API\Vendor\VendorApplicationController;
 use App\Http\Controllers\API\Vendor\VendorController;
+use App\Http\Controllers\API\Vendor\VendorPayoutController;
+use App\Http\Controllers\API\Vendor\VendorProfileController;
 use App\Http\Controllers\Api\WishList\WishlistController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -131,6 +136,28 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
+// ============ VENDOR PROFILE ROUTES ============
+// ✅ NEW: Vendor profile endpoints
+
+
+// ============ VENDOR PROFILE ROUTES ============
+Route::middleware(['auth:sanctum', 'role:vendor'])->prefix('vendor')->group(function () {
+    // Profile
+    Route::prefix('profile')->group(function () {
+        Route::get('/', [VendorProfileController::class, 'index']);
+        Route::put('/', [VendorProfileController::class, 'update']);
+        Route::post('/logo', [VendorProfileController::class, 'updateLogo']);
+        Route::get('/stats', [VendorProfileController::class, 'stats']);
+        Route::get('/analytics', [VendorProfileController::class, 'analytics']);
+    });
+
+    // Shipping
+    Route::prefix('shipping')->group(function () {
+        Route::get('/', [VendorProfileController::class, 'getShipping']);
+        Route::put('/', [VendorProfileController::class, 'updateShipping']);
+    });
+});
+
 /*
 * Admin Routes
 */
@@ -195,6 +222,23 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'role:vendor'])->group(function
 
     });
 });
+
+
+/**
+ * *Order Management Routes by Vendors
+ */
+
+Route::middleware(['auth:sanctum', 'role:vendor'])->prefix('vendor')->group(function () {
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/', [App\Http\Controllers\API\Vendor\VendorDashboardController::class, 'index']);
+        Route::get('/orders', [App\Http\Controllers\API\Vendor\VendorDashboardController::class, 'orders']);
+        Route::get('/orders/stats', [App\Http\Controllers\API\Vendor\VendorDashboardController::class, 'orderStats']);
+        Route::get('/orders/recent', [App\Http\Controllers\API\Vendor\VendorDashboardController::class, 'recentOrders']);
+        Route::get('/orders/{orderId}', [App\Http\Controllers\API\Vendor\VendorDashboardController::class, 'showOrder']);
+        Route::put('/orders/{orderId}/status', [App\Http\Controllers\API\Vendor\VendorDashboardController::class, 'updateOrderStatus']);
+    });
+});
+
 
 /**
  * *Authenticated Review Actions (Customer/Vendor/Admin)
@@ -265,3 +309,41 @@ Route::middleware(['auth:sanctum'])->prefix('checkout')->group(function () {
     Route::post('/process', [CheckoutController::class, 'process']);
 });
 
+
+
+// ============ PAYMENT ROUTES ============
+Route::middleware(['auth:sanctum'])->prefix('payments')->group(function () {
+    Route::get('/my', [PaymentController::class, 'getMyPayments']);
+    Route::get('/{paymentId}', [PaymentController::class, 'getPaymentDetails']);
+    Route::get('/order/{orderId}/status', [PaymentController::class, 'getPaymentStatus']);
+});
+
+// ============ VENDOR PAYOUT ROUTES ============
+Route::middleware(['auth:sanctum', 'role:vendor'])->prefix('vendor')->group(function () {
+    Route::prefix('payouts')->group(function () {
+        Route::get('/dashboard', [VendorPayoutController::class, 'dashboard']);
+        Route::get('/history', [VendorPayoutController::class, 'history']);
+        Route::get('/earnings-summary', [VendorPayoutController::class, 'earningsSummary']);
+    });
+});
+
+// ============ ADMIN PAYOUT ROUTES ============
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+    Route::prefix('payouts')->group(function () {
+        Route::get('/pending', [AdminPayoutController::class, 'pendingPayouts']);
+        Route::post('/process', [AdminPayoutController::class, 'processPayouts']);
+        Route::get('/summary', [AdminPayoutController::class, 'payoutSummary']);
+        Route::get('/{payoutId}', [AdminPayoutController::class, 'payoutDetails']);
+    });
+});
+
+// ============ TRANSACTION ROUTES ============
+Route::middleware(['auth:sanctum'])->prefix('transactions')->group(function () {
+    Route::get('/my', [TransactionController::class, 'myTransactions']);
+    Route::get('/summary', [TransactionController::class, 'transactionSummary']);
+});
+
+// Admin transaction routes
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+    Route::get('/transactions', [TransactionController::class, 'adminTransactions']);
+});

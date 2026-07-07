@@ -5,114 +5,142 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-
-
 
 class CheckoutService {
     protected $cartService;
+    protected $paymentService;
 
-    public function __construct(CartService $cartService) {
-        $this->cartService = $cartService;
+    public function __construct(CartService $cartService, PaymentService $paymentService) {
+        $this->cartService    = $cartService;
+        $this->paymentService = $paymentService;
     }
 
     /**
      * Process checkout - Converts cart to order
      */
-    public function processCheckout(array $data)
-{
-    // ✅ Start transaction at service level
-    return DB::transaction(function () use ($data) {
-        $user = auth()->user();
-        $cart = $this->cartService->getCart();
-        $profile = $user->profile;
-        $hasAddress = $profile && !empty($profile->address) && !empty($profile->city) && !empty($profile->country);
+    public function processCheckout(array $data) {
+        return DB::transaction(function () use ($data) {
+            $user    = Auth::user();
+            $cart    = $this->cartService->getCart();
+            $profile = $user->profile;
 
-        // ✅ Get address from profile if not provided in request
-        $shippingAddress = $data['shipping_address'] ?? ($profile->address ?? null);
-        $shippingCity = $data['shipping_city'] ?? ($profile->city ?? null);
-        $shippingCountry = $data['shipping_country'] ?? ($profile->country ?? null);
+            // ✅ Updated: Include state and postal_code in hasAddress check
+            $hasAddress = $profile &&
+            ! empty($profile->address) &&
+            ! empty($profile->city) &&
+            ! empty($profile->state) &&
+            ! empty($profile->postal_code) &&
+            ! empty($profile->country);
 
-        $useSameAddress = $data['use_same_address'] ?? false;
+            // ✅ Updated: Get ALL address fields from profile including state and postal_code
+            $shippingAddress    = $data['shipping_address'] ?? ($profile?->address ?? null);
+            $shippingCity       = $data['shipping_city'] ?? ($profile?->city ?? null);
+            $shippingState      = $data['shipping_state'] ?? ($profile?->state ?? null);
+            $shippingPostalCode = $data['shipping_postal_code'] ?? ($profile?->postal_code ?? null);
+            $shippingCountry    = $data['shipping_country'] ?? ($profile?->country ?? null);
 
-        if ($useSameAddress) {
-            $billingAddress = $shippingAddress;
-            $billingCity = $shippingCity;
-            $billingCountry = $shippingCountry;
-        } else {
-            $billingAddress = $data['billing_address'] ?? ($profile->address ?? null);
-            $billingCity = $data['billing_city'] ?? ($profile->city ?? null);
-            $billingCountry = $data['billing_country'] ?? ($profile->country ?? null);
-        }
+            $useSameAddress = $data['use_same_address'] ?? false;
 
-        // ✅ Validate addresses
-        if (empty($shippingAddress) || empty($shippingCity) || empty($shippingCountry)) {
-            throw new \Exception('Shipping address is required.');
-        }
-
-        if (empty($billingAddress) || empty($billingCity) || empty($billingCountry)) {
-            throw new \Exception('Billing address is required.');
-        }
-
-        // ✅ Save address to profile (INSIDE TRANSACTION)
-        $shouldSaveAddress = false;
-
-        if (!$hasAddress) {
-            // Profile empty - ALWAYS save
-            $shouldSaveAddress = true;
-        } elseif ($data['save_address'] ?? false) {
-            // Profile has address - save only if user checked the box
-            $shouldSaveAddress = true;
-        }
-
-        if ($shouldSaveAddress && !empty($shippingAddress)) {
-            $profileData = [
-                'address' => $shippingAddress,
-                'city' => $shippingCity,
-                'country' => $shippingCountry,
-                'phone' => $data['customer_phone'] ?? $profile->phone ?? null,
-            ];
-
-            if ($profile) {
-                $profile->update($profileData);
+            if ($useSameAddress) {
+                $billingAddress    = $shippingAddress;
+                $billingCity       = $shippingCity;
+                $billingState      = $shippingState;
+                $billingPostalCode = $shippingPostalCode;
+                $billingCountry    = $shippingCountry;
             } else {
-                $user->profile()->create($profileData);
+                $billingAddress    = $data['billing_address'] ?? ($profile?->address ?? null);
+                $billingCity       = $data['billing_city'] ?? ($profile?->city ?? null);
+                $billingState      = $data['billing_state'] ?? ($profile?->state ?? null);
+                $billingPostalCode = $data['billing_postal_code'] ?? ($profile?->postal_code ?? null);
+                $billingCountry    = $data['billing_country'] ?? ($profile?->country ?? null);
             }
-        }
 
-        // ✅ Prepare data for order creation
-        $data['shipping_address'] = $shippingAddress;
-        $data['shipping_city'] = $shippingCity;
-        $data['shipping_country'] = $shippingCountry;
-        $data['billing_address'] = $billingAddress;
-        $data['billing_city'] = $billingCity;
-        $data['billing_country'] = $billingCountry;
+            // ✅ Updated: Validate all address fields
+            if (empty($shippingAddress) || empty($shippingCity) || empty($shippingState) || empty($shippingPostalCode) || empty($shippingCountry)) {
+                throw new \Exception('Complete shipping address (address, city, state, postal code, country) is required.');
+            }
 
-        // Validate cart is not empty
-        if ($cart->isEmpty()) {
-            throw new \Exception('Your cart is empty.');
-        }
+            if (empty($billingAddress) || empty($billingCity) || empty($billingState) || empty($billingPostalCode) || empty($billingCountry)) {
+                throw new \Exception('Complete billing address is required.');
+            }
 
-        // Calculate totals
-        $totals = $this->calculateTotals($cart, $data);
+            // ✅ Updated: Save ALL address fields to profile including state and postal_code
+            $shouldSaveAddress = false;
 
-        // Create order from cart
-        $order = $this->createOrder($data, $user, $cart, $totals);
+            if (! $hasAddress) {
+                $shouldSaveAddress = true;
+            } elseif ($data['save_address'] ?? false) {
+                $shouldSaveAddress = true;
+            }
 
-        // Create order items from cart items
-        $this->createOrderItems($order, $cart);
+            if ($shouldSaveAddress && ! empty($shippingAddress)) {
+                $profileData = [
+                    'address'     => $shippingAddress,
+                    'city'        => $shippingCity,
+                    'state'       => $shippingState,      // ✅ ADDED
+                    'postal_code' => $shippingPostalCode, // ✅ ADDED
+                    'country'     => $shippingCountry,
+                    'phone'       => $data['customer_phone'] ?? $profile?->phone ?? null,
+                ];
 
-        // Clear cart items (keep cart record)
-        $cart->clear();
+                if ($profile) {
+                    $profile->update($profileData);
+                } else {
+                    $user->profile()->create([
+                        'user_uuid' => $user->uuid,
+                        ...$profileData,
+                    ]);
+                }
+            }
 
-        return [
-            'order' => $order->load('items'),
-            'order_number' => $order->order_number,
-            'grand_total' => (float) $order->grand_total,
-            'message' => 'Order placed successfully',
-        ];
-    });
-}
+            // ✅ Updated: Prepare ALL address fields for order creation
+            $data['shipping_address']     = $shippingAddress;
+            $data['shipping_city']        = $shippingCity;
+            $data['shipping_state']       = $shippingState;
+            $data['shipping_postal_code'] = $shippingPostalCode;
+            $data['shipping_country']     = $shippingCountry;
+            $data['billing_address']      = $billingAddress;
+            $data['billing_city']         = $billingCity;
+            $data['billing_state']        = $billingState;
+            $data['billing_postal_code']  = $billingPostalCode;
+            $data['billing_country']      = $billingCountry;
+
+            // Validate cart is not empty
+            if ($cart->isEmpty()) {
+                throw new \Exception('Your cart is empty.');
+            }
+
+            // Calculate totals
+            $totals = $this->calculateTotals($cart, $data);
+
+            // Create order from cart
+            $order = $this->createOrder($data, $user, $cart, $totals);
+            //create payment record
+            $payment = $this->paymentService->createPayment($order, [
+                'payment_method' => $data['payment_method'] ?? 'cod',
+            ]);
+
+            // ✅ If payment is COD, mark as success immediately
+            if ($data['payment_method'] === 'cod') {
+                $this->paymentService->confirmPayment($payment);
+            }
+
+            // Create order items from cart items
+            $this->createOrderItems($order, $cart);
+
+            // Clear cart items (keep cart record)
+            $cart->clear();
+
+            return [
+                'order'        => $order->load('items'),
+                'order_number' => $order->order_number,
+                'grand_total'  => (float) $order->grand_total,
+                'message'      => 'Order placed successfully',
+            ];
+        });
+    }
 
     /**
      * Calculate order totals
@@ -228,7 +256,7 @@ class CheckoutService {
      */
     public function getCheckoutSummary() {
         $cart = $this->cartService->getCart();
-        $user = auth()->user();
+        $user = Auth::user();
 
         if ($cart->isEmpty()) {
             throw new \Exception('Your cart is empty.');

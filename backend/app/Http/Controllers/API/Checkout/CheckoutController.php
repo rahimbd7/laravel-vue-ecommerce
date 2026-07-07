@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Services\CheckoutService;
 use App\Trait\ApiResponseTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CheckoutController extends Controller
 {
@@ -28,7 +29,7 @@ class CheckoutController extends Controller
             $summary = $this->checkoutService->getCheckoutSummary();
 
             /** @var \App\Models\User|null $user */
-            $user = auth()->user();
+            $user = Auth::user();
             $profile = $user->profile;
 
             $hasAddress = $profile && !empty($profile->address);
