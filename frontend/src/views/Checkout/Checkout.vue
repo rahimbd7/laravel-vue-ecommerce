@@ -115,6 +115,10 @@
               </label>
             </div>
           </div>
+          <label class="flex items-center cursor-pointer mt-4">
+  <input v-model="form.save_address" type="checkbox" class="w-4 h-4 text-[#00685F] border-gray-300 rounded focus:ring-[#00685F]" />
+  <span class="ml-2 text-sm text-gray-700">Save this address to my profile for future orders</span>
+</label>
 
           <!-- Billing Address -->
           <div v-if="!form.use_same_address" class="bg-white rounded-lg shadow-sm p-6">
@@ -255,6 +259,7 @@ const cartStore = useCartStore()
 const authStore = useAuthStore()
 
 const loading = ref(false)
+const profileData =ref<any>(null)
 
 // ✅ Safe computed values to prevent NaN
 const subtotal = computed(() => Number(cartStore.subtotal) || 0)
@@ -282,20 +287,50 @@ const form = reactive({
   card_expiry: '',
   card_cvv: '',
   card_name: '',
-  terms_agreed: false
+  terms_agreed: false,
+  save_address: false, 
 })
-
-// Pre-fill user data
-if (authStore.isAuthenticated && authStore.user) {
-  form.customer_name = authStore.user.name || ''
-  form.customer_email = authStore.user.email || ''
-  if (authStore.user.profile) {
-    form.customer_phone = authStore.user.profile.phone || ''
-    form.shipping_address = authStore.user.profile.address || ''
-    form.shipping_city = authStore.user.profile.city || ''
-    form.shipping_country = authStore.user.profile.country || ''
+//load profile data
+const loadProfileData = async () => {
+  try {
+    const response = await api.get('/me')
+    const data = response.data.data
+    
+    console.log('✅ Full user data from API:', data)
+    
+    // ✅ Profile is nested inside the user data
+    profileData.value = data.profile
+    
+    console.log('✅ Profile data loaded:', profileData.value)
+    
+    // ✅ Pre-fill form with user data
+    form.customer_name = data.name || ''
+    form.customer_email = data.email || ''
+    
+    // ✅ Pre-fill form with profile data
+    if (profileData.value) {
+      form.customer_phone = profileData.value.phone || ''
+      form.shipping_address = profileData.value.address || ''
+      form.shipping_city = profileData.value.city || ''
+      form.shipping_state = profileData.value.state || ''
+      form.shipping_postal_code = profileData.value.postal_code || ''
+      form.shipping_country = profileData.value.country || ''
+      
+      console.log('✅ Form filled with profile data:', {
+        address: form.shipping_address,
+        city: form.shipping_city,
+        state: form.shipping_state,
+        postal_code: form.shipping_postal_code,
+        country: form.shipping_country,
+      })
+    } else {
+      console.warn('⚠️ No profile data found')
+    }
+  } catch (error) {
+    console.error('❌ Failed to load profile:', error)
   }
 }
+
 
 const copyShippingToBilling = () => {
   if (form.use_same_address) {
@@ -359,6 +394,7 @@ const placeOrder = async () => {
       use_same_address: form.use_same_address,
       shipping_method: form.shipping_method,
       payment_method: form.payment_method,
+      save_address: form.save_address,
       notes: form.notes
     })
     if (response.data.status === 'success') {
@@ -382,5 +418,6 @@ const placeOrder = async () => {
 
 onMounted(async () => {
   await cartStore.fetchCart()
+  await loadProfileData()
 })
 </script>

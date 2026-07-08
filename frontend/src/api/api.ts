@@ -79,4 +79,27 @@ api.interceptors.response.use(
   }
 );
 
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      message: error.response?.data?.message
+    })
+    
+    const authStore = useAuthStore()
+    
+    if (error.response?.status === 401 && !error.config.url?.includes('/login')) {
+      console.warn('Token expired or invalid, logging out...')
+      authStore.cleanState()
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login'
+      }
+    }
+    
+    return Promise.reject(error)
+  }
+)
 export default api;

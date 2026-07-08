@@ -12,6 +12,9 @@ interface User {
     address?: string
     city?: string
     country?: string
+    postal_code?: string
+    state?: string
+    
   }
 }
 

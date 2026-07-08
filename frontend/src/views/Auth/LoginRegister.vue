@@ -199,7 +199,6 @@ const flipToLogin = () => {
 
 const handleLogin = async (data: any) => {
   loading.value = true
-  console.log('Login data:', data) // Debugging log
   try {
     const result = await authStore.login(data.email, data.password)
     if (result.success) {

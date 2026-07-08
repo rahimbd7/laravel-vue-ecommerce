@@ -3,37 +3,76 @@
     <!-- Top Navbar -->
     <Menubar :model="menuItems" class="border-0 rounded-none shadow-sm sticky top-0 z-50">
       <template #start>
-        <router-link :to="dashboardPath" class="text-xl font-bold text-[#00685F]">
-          {{ appName }}
-        </router-link>
+        <div class="flex items-center gap-2 sm:gap-4">
+          <!-- Menu Toggle Button - visible on tablet and mobile -->
+          <Button 
+            icon="pi pi-bars" 
+            text 
+            rounded 
+            class="lg:hidden p-button-sm"
+            @click="toggleSidebar"
+          />
+          <router-link :to="dashboardPath" class="text-xl font-bold text-[#00685F]">
+            {{ appName }}
+          </router-link>
+        </div>
       </template>
       <template #end>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3">
           <div class="relative">
             <Button icon="pi pi-bell" text rounded class="p-button-sm" @click="showToast('info', 'Notifications', 'You have 3 new notifications')" />
             <Badge value="3" severity="danger" class="absolute -top-1 -right-1" />
           </div>
-          <SplitButton :label="userName" :model="userMenuItems" class="p-button-sm" button-class="bg-[#00685F] border-[#00685F] hover:bg-[#004F45]">
-            <template #default>
-              <div class="flex items-center gap-2">
-                <Avatar :label="userInitials" size="small" style="background-color: #00685F; color: white;" />
-                <span class="hidden md:inline">{{ userName }}</span>
-              </div>
-            </template>
-          </SplitButton>
+          <!-- ✅ Show SplitButton only on desktop, Avatar only on mobile/tablet -->
+          <div class="hidden lg:block">
+            <SplitButton :label="userName" :model="userMenuItems" class="p-button-sm" button-class="bg-[#00685F] border-[#00685F] hover:bg-[#004F45]">
+              <template #default>
+                <div class="flex items-center gap-2">
+                  <Avatar :label="userInitials" size="small" style="background-color: #00685F; color: white;" />
+                  <span class="hidden md:inline">{{ userName }}</span>
+                </div>
+              </template>
+            </SplitButton>
+          </div>
+          <div class="lg:hidden">
+            <Avatar :label="userInitials" size="small" style="background-color: #00685F; color: white;" />
+          </div>
         </div>
       </template>
     </Menubar>
 
     <!-- Main Content -->
-    <div class="flex">
-      <!-- Sidebar -->
-      <div class="w-64 bg-white border-r border-gray-200 min-h-screen sticky top-0">
+    <div class="flex relative">
+      <!-- Sidebar Overlay -->
+      <div 
+        v-if="sidebarOpen" 
+        class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+        @click="closeSidebar"
+      ></div>
+
+      <!-- Sidebar - Hidden on mobile/tablet, visible on desktop -->
+      <aside 
+        class="fixed lg:relative top-0 left-0 w-64 bg-white border-r border-gray-200 h-screen overflow-y-auto transition-transform duration-300 ease-in-out z-50"
+        :class="[
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          'lg:translate-x-0 lg:block'
+        ]"
+      >
+        <div class="flex justify-between items-center p-4 border-b border-gray-200 lg:hidden">
+          <span class="font-semibold text-gray-900">Menu</span>
+          <Button 
+            icon="pi pi-times" 
+            text 
+            rounded 
+            class="p-button-sm"
+            @click="closeSidebar"
+          />
+        </div>
         <PanelMenu :model="panelMenuItems" class="border-0 p-2" />
-      </div>
+      </aside>
 
       <!-- Page Content -->
-      <main class="flex-1 p-6">
+      <main class="flex-1 p-4 sm:p-6 min-h-screen">
         <router-view />
       </main>
     </div>
@@ -44,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useCustomerDashboardStore } from '@/stores/DashboardStore/Customer/dashboard.customer.store'
@@ -68,14 +107,49 @@ const dashboardStore = useCustomerDashboardStore()
 const toast = useToast()
 const confirm = useConfirm()
 
-// ✅ Initialize dashboard data when authenticated
-onMounted(async () => {
+// Sidebar toggle state
+const sidebarOpen = ref(false)
+
+const toggleSidebar = () => {
+  sidebarOpen.value = !sidebarOpen.value
+}
+
+const closeSidebar = () => {
+  sidebarOpen.value = false
+}
+
+// Close sidebar on route change (mobile/tablet only)
+watch(
+  () => route.path,
+  () => {
+    if (window.innerWidth < 1024) {
+      closeSidebar()
+    }
+  }
+)
+
+// Close sidebar on Escape key
+const handleEscapeKey = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && sidebarOpen.value) {
+    closeSidebar()
+  }
+}
+
+// Initialize dashboard data when authenticated
+onMounted(() => {
+  document.addEventListener('keydown', handleEscapeKey)
+  
   if (authStore.isAuthenticated) {
-    await dashboardStore.initialize()
+    dashboardStore.initialize()
   }
 })
 
-// ✅ Watch for login state changes
+// Cleanup event listener
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleEscapeKey)
+})
+
+// Watch for login state changes
 watch(
   () => authStore.isAuthenticated,
   async (isAuthenticated) => {
@@ -107,11 +181,11 @@ const dashboardPath = computed(() => {
   return paths[role] || '/dashboard/customer'
 })
 
-// ✅ Get user details from auth store
+// Get user details from auth store
 const userName = computed(() => authStore.userName)
 const userRole = computed(() => authStore.user?.role || 'customer')
 
-// ✅ Compute user initials from auth store user name
+// Compute user initials from auth store user name
 const userInitials = computed(() => {
   const name = authStore.user?.name || 'User'
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -128,11 +202,11 @@ const getOrdersPath = () => {
   return paths[role] || '/dashboard/customer/orders'
 }
 
-// Top Menu Items
+// Top Menu Items - Hide on mobile/tablet
 const menuItems = ref([
-  { label: 'Dashboard', icon: 'pi pi-home', to: dashboardPath.value },
-  { label: 'Shop', icon: 'pi pi-shopping-bag', to: '/shop' },
-  { label: 'Orders', icon: 'pi pi-shopping-cart', to: getOrdersPath() }
+  { label: 'Dashboard', icon: 'pi pi-home', to: dashboardPath.value, class: 'hidden lg:block' },
+  { label: 'Shop', icon: 'pi pi-shopping-bag', to: '/shop', class: 'hidden lg:block' },
+  { label: 'Orders', icon: 'pi pi-shopping-cart', to: getOrdersPath(), class: 'hidden lg:block' }
 ])
 
 // Watch for role changes to update menuItems
@@ -143,9 +217,9 @@ watch(
     const ordersPath = getOrdersPath()
     
     menuItems.value = [
-      { label: 'Dashboard', icon: 'pi pi-home', to: path },
-      { label: 'Shop', icon: 'pi pi-shopping-bag', to: '/shop' },
-      { label: 'Orders', icon: 'pi pi-shopping-cart', to: ordersPath }
+      { label: 'Dashboard', icon: 'pi pi-home', to: path, class: 'hidden lg:block' },
+      { label: 'Shop', icon: 'pi pi-shopping-bag', to: '/shop', class: 'hidden lg:block' },
+      { label: 'Orders', icon: 'pi pi-shopping-cart', to: ordersPath, class: 'hidden lg:block' }
     ]
   },
   { immediate: true }
@@ -170,7 +244,7 @@ const handleLogout = () => {
   })
 }
 
-// User menu items
+// User menu items - only used on desktop
 const userMenuItems = ref([
   { label: 'Profile', icon: 'pi pi-user', command: () => router.push(`${dashboardPath.value}/profile`) },
   { label: 'Dashboard', icon: 'pi pi-home', command: () => router.push(dashboardPath.value) },
@@ -262,7 +336,7 @@ const panelMenuItems = computed(() => {
         label: 'Products',
         icon: 'pi pi-box',
         items: [
-          { label: 'My Products', icon: 'pi pi-list', to: '/dashboard/vendor/products', command: () => router.push('/dashboard/vendor/products') },
+          { label: 'All Products', icon: 'pi pi-list', to: '/dashboard/vendor/products', command: () => router.push('/dashboard/vendor/products') },
           { label: 'Add Product', icon: 'pi pi-plus', to: '/dashboard/vendor/products/create', command: () => router.push('/dashboard/vendor/products/create') }
         ]
       },
@@ -330,13 +404,88 @@ const panelMenuItems = computed(() => {
 </script>
 
 <style scoped>
-:deep(.p-menubar) { background: white; border-bottom: 1px solid #e5e7eb; }
-:deep(.p-menubar .p-menubar-end) { display: flex; align-items: center; }
-:deep(.p-panelmenu .p-panelmenu-header > a) { background: transparent; border: none; font-weight: 600; }
-:deep(.p-panelmenu .p-panelmenu-content) { background: transparent; border: none; }
-:deep(.p-panelmenu .p-menuitem-link) { padding: 0.75rem 1rem; border-radius: 0.5rem; transition: all 0.2s; }
-:deep(.p-panelmenu .p-menuitem-link:hover) { background: #f3f4f6; }
-:deep(.p-panelmenu .p-menuitem-link-active) { background: #00685F; color: white; }
-:deep(.p-panelmenu .p-menuitem-link-active .p-menuitem-text) { color: white; }
-:deep(.p-panelmenu .p-menuitem-link-active .p-menuitem-icon) { color: white; }
+/* Sidebar transition */
+aside {
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Overlay styles */
+.fixed.inset-0 {
+  backdrop-filter: blur(2px);
+}
+
+/* ✅ Hide Menubar mobile toggle button (three dots) on tablet and mobile */
+@media (max-width: 1023px) {
+  :deep(.p-menubar .p-menubar-button) {
+    display: none !important;
+  }
+}
+
+/* ✅ Hide menu items on mobile and tablet (below 1024px) */
+@media (max-width: 1023px) {
+  :deep(.p-menubar .p-menubar-root-list > .p-menuitem) {
+    display: none !important;
+  }
+}
+
+/* Responsive fixes for PanelMenu on mobile/tablet */
+@media (max-width: 1023px) {
+  :deep(.p-panelmenu .p-panelmenu-header > a) {
+    padding: 0.5rem 0.75rem !important;
+  }
+  
+  :deep(.p-panelmenu .p-menuitem-link) {
+    padding: 0.5rem 0.75rem !important;
+  }
+}
+
+/* Menubar responsive fixes */
+:deep(.p-menubar) { 
+  background: white; 
+  border-bottom: 1px solid #e5e7eb; 
+}
+
+:deep(.p-menubar .p-menubar-end) { 
+  display: flex; 
+  align-items: center; 
+}
+
+/* PanelMenu styles */
+:deep(.p-panelmenu .p-panelmenu-panel) {
+  margin-bottom: 0.25rem;
+}
+
+:deep(.p-panelmenu .p-panelmenu-header > a) { 
+  background: transparent; 
+  border: none; 
+  font-weight: 600; 
+}
+
+:deep(.p-panelmenu .p-panelmenu-content) { 
+  background: transparent; 
+  border: none; 
+}
+
+:deep(.p-panelmenu .p-menuitem-link) { 
+  padding: 0.75rem 1rem; 
+  border-radius: 0.5rem; 
+  transition: all 0.2s; 
+}
+
+:deep(.p-panelmenu .p-menuitem-link:hover) { 
+  background: #f3f4f6; 
+}
+
+:deep(.p-panelmenu .p-menuitem-link-active) { 
+  background: #00685F; 
+  color: white; 
+}
+
+:deep(.p-panelmenu .p-menuitem-link-active .p-menuitem-text) { 
+  color: white; 
+}
+
+:deep(.p-panelmenu .p-menuitem-link-active .p-menuitem-icon) { 
+  color: white; 
+}
 </style>
