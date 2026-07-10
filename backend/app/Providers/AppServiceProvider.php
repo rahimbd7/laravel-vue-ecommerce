@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\Admin\AdminDashboardService;
+use App\Services\Admin\UserService;
 use App\Services\AuthService;
 use App\Services\CartService;
 use App\Services\CategoryService;
@@ -53,6 +55,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(VendorPayoutService::class);
         $this->app->singleton(TransactionService::class);
         $this->app->singleton(CommissionService::class);
+        $this->app->singleton(AdminDashboardService::class);
+        $this->app->singleton(UserService::class);
+
 
 
     }

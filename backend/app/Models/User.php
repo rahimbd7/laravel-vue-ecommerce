@@ -10,11 +10,19 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
-
-
 class User extends Authenticatable {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable , SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'role',
+        'email_verified_at',
+        'uuid',
+        'last_login_at'
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -34,12 +42,8 @@ class User extends Authenticatable {
                 $user->profile->delete();
             }
         });
-        static::restored(function ($user) {
-             if ($user->profile()->withTrashed()->exists()) {
-                $user->profile()->withTrashed()->restore();
-            }
-        });
     }
+
 
     public function profile() {
         return $this->hasOne(Profile::class, 'user_uuid', 'uuid');
@@ -48,6 +52,11 @@ class User extends Authenticatable {
         return $this->hasOne(Vendor::class, 'user_uuid', 'uuid');
     }
 
+    public function orders() {
+        return $this->hasMany(Order::class, 'user_id', 'id');
+    }
+     public function reviews() {
+        return $this->hasMany(ProductReview::class, 'user_id', 'id');}
     //Role check methods
     public function isAdmin(): bool {
         return $this->role === 'admin';
@@ -61,12 +70,6 @@ class User extends Authenticatable {
     public function isVerifiedVendor(): bool {
         return $this->isVendor() && $this->vendor && $this->vendor?->is_verified;
     }
-
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -91,13 +94,11 @@ class User extends Authenticatable {
     }
 
     //wishlist relationship
-    public function wishlist(): HasMany
-    {
+    public function wishlist(): HasMany {
         return $this->hasMany(Wishlist::class, 'user_uuid', 'uuid');
     }
 
-    public function wishlistProducts(): HasManyThrough
-    {
+    public function wishlistProducts(): HasManyThrough {
         return $this->hasManyThrough(
             Product::class,
             Wishlist::class,
@@ -108,13 +109,11 @@ class User extends Authenticatable {
         );
     }
 
-    public function getWishlistCountAttribute(): int
-    {
+    public function getWishlistCountAttribute(): int {
         return $this->wishlist()->count();
     }
 
-    public function isInWishlist(int $productId): bool
-    {
+    public function isInWishlist(int $productId): bool {
         return $this->wishlist()->where('product_id', $productId)->exists();
     }
 }
