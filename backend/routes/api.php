@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\API\Admin\AdminCategoryController;
+use App\Http\Controllers\API\Admin\AdminDashboardController;
 use App\Http\Controllers\API\Admin\AdminPayoutController;
+use App\Http\Controllers\API\Admin\AdminUserController;
 use App\Http\Controllers\API\Admin\AdminVendorController;
 use App\Http\Controllers\API\Auth\AuthController;
 use App\Http\Controllers\API\Cart\CartController;
@@ -346,4 +348,35 @@ Route::middleware(['auth:sanctum'])->prefix('transactions')->group(function () {
 // Admin transaction routes
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/transactions', [TransactionController::class, 'adminTransactions']);
+});
+
+
+// ============ ADMIN DASHBOARD ROUTES ============
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/', [AdminDashboardController::class, 'index']);
+        Route::get('/revenue', [AdminDashboardController::class, 'revenue']);
+        Route::get('/users', [AdminDashboardController::class, 'users']);
+        Route::get('/vendors', [AdminDashboardController::class, 'vendors']);
+        Route::get('/orders', [AdminDashboardController::class, 'orders']);
+        Route::get('/commissions', [AdminDashboardController::class, 'commissions']);
+        Route::get('/activities', [AdminDashboardController::class, 'activities']);
+        Route::get('/top-vendors', [AdminDashboardController::class, 'topVendors']);
+        Route::post('/clear-cache', [AdminDashboardController::class, 'clearCache']);
+    });
+     // ===================== USER MANAGEMENT =====================
+    Route::prefix('users')->group(function () {
+        Route::get('/', [AdminUserController::class, 'index']);
+        Route::post('/', [AdminUserController::class, 'store']);
+        Route::get('/{id}', [AdminUserController::class, 'show']);
+        Route::put('/{id}', [AdminUserController::class, 'update']);
+        Route::delete('/{id}', [AdminUserController::class, 'destroy']);
+        Route::post('/{id}/restore', [AdminUserController::class, 'restore']);
+        Route::get('/{id}/orders', [AdminUserController::class, 'orders']);
+        Route::get('/{id}/activities', [AdminUserController::class, 'activities']);
+        Route::get('/{id}/stats', [AdminUserController::class, 'stats']);
+        Route::get('/{id}/activities/export', [AdminUserController::class, 'exportActivities']);
+        Route::post('/bulk-delete', [AdminUserController::class, 'bulkDelete']);
+        Route::post('/bulk-status', [AdminUserController::class, 'bulkStatus']);
+    });
 });
