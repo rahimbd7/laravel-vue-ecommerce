@@ -88,10 +88,7 @@ class CheckoutService {
                 if ($profile) {
                     $profile->update($profileData);
                 } else {
-                    $user->profile()->create([
-                        'user_uuid' => $user->uuid,
-                        ...$profileData,
-                    ]);
+                    $user->profile()->create($profileData);
                 }
             }
 

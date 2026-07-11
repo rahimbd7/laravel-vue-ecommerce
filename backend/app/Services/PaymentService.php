@@ -52,7 +52,7 @@ class PaymentService
     {
         return DB::transaction(function () use ($payment, $data) {
             $payment->markAsPaid();
-            
+
             if (isset($data['transaction_id'])) {
                 $payment->transaction_id = $data['transaction_id'];
                 $payment->save();
@@ -60,7 +60,7 @@ class PaymentService
 
             // Update order payment status
             $order = $payment->order;
-            $order->payment_status = 'paid';
+            $order->payment_status = 'pending'; // or 'paid' based on your business logic
             $order->save();
 
             $this->transactionService->log(
@@ -82,7 +82,7 @@ class PaymentService
     {
         return DB::transaction(function () use ($payment, $reason) {
             $payment->markAsFailed($reason);
-            
+
             $this->transactionService->log(
                 user: $payment->user,
                 action: 'payment',
