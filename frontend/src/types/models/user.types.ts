@@ -9,6 +9,7 @@ export interface User {
   email_verified_at: string | null;
   created_at: string;
   updated_at: string;
+  last_login_at?: string | null;
 }
 
 export interface UserProfile {
@@ -45,4 +46,30 @@ export interface RegisterRequest {
   email: string;
   password: string;
   password_confirmation?: string;
+}
+
+export interface UserStats {
+  total: number
+  today: number
+  week: number
+  month: number
+  active: number
+  inactive: number
+  by_role: {
+    customer: number
+    vendor: number
+    admin: number
+  }
+  trend: Array<{ date: string; new_users: number }>
+  retention_rate: number
+}
+
+export interface UserFilters {
+  search?: string
+  role?: string
+  status?: string
+  date_from?: string
+  date_to?: string
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
 }

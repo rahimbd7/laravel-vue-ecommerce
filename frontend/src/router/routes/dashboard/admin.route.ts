@@ -1,5 +1,8 @@
 import { UserRole } from "@/types/common.types";
 import Index from "@/views/Dashboard/admin/index.vue";
+import UserDetails from "@/views/Dashboard/admin/users/UserDetails.vue";
+import UserIndex from "@/views/Dashboard/admin/users/UserIndex.vue";
+import UserManagement from "@/views/Dashboard/admin/users/UserManagement.vue";
 
 // Admin Dashboard Routes
 export const adminRoutes = [
@@ -9,18 +12,24 @@ export const adminRoutes = [
     component: () => Index,
     meta: { roles: [UserRole.Admin] },
   },
-  // {
-  //   path: "admin/users",
-  //   name: "AdminUsers",
-  //   component: () => import("@/views/dashboard/admin/users/Index.vue"),
-  //   meta: { roles: ["admin"] },
-  // },
-  // {
-  //   path: "admin/users/customers",
-  //   name: "AdminCustomers",
-  //   component: () => import("@/views/dashboard/admin/users/Customers.vue"),
-  //   meta: { roles: ["admin"] },
-  // },
+  {
+    path: "admin/users",
+    name: "AdminUsers",
+    component: () => UserIndex,
+    meta: { roles: ["admin"] },
+  },
+  {
+    path: "admin/users/user-management",
+    name: "AdminUsersManagement",
+    component: () => UserManagement,
+    meta: { roles: ["admin"] },
+  },
+  {
+    path: "admin/users/:id",
+    name: "AdminUsersDetail",
+    component: () => UserDetails,
+    meta: { roles: ["admin"] },
+  },
   // {
   //   path: "admin/users/vendors",
   //   name: "AdminVendors",
