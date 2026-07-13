@@ -279,8 +279,7 @@ const panelMenuItems = computed(() => {
         icon: 'pi pi-users',
         items: [
           { label: 'All Users', icon: 'pi pi-list', to: '/dashboard/admin/users', command: () => router.push('/dashboard/admin/users') },
-          { label: 'Customers', icon: 'pi pi-user', to: '/dashboard/admin/users/customers', command: () => router.push('/dashboard/admin/users/customers') },
-          { label: 'Vendors', icon: 'pi pi-store', to: '/dashboard/admin/users/vendors', command: () => router.push('/dashboard/admin/users/vendors') }
+          { label: 'Manage Users', icon: 'pi pi-user', to: '/dashboard/admin/users/user-management', command: () => router.push('/dashboard/admin/users/user-management') },
         ]
       },
       {

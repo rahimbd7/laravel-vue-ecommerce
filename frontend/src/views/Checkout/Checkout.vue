@@ -376,7 +376,17 @@ const placeOrder = async () => {
   if (!authStore.isAuthenticated) { await Swal.fire({ icon: 'error', title: 'Login Required', text: 'Please login to place order', confirmButtonColor: '#00685F' }); router.push('/login'); return }
 
   loading.value = true
+
   try {
+    const profileData = {
+      phone: form.customer_phone,
+      address: form.shipping_address,
+      city: form.shipping_city,
+      state: form.shipping_state,
+      postal_code: form.shipping_postal_code,
+      country: form.shipping_country
+    }
+    console.log('Profile Data:', profileData)
     const response = await api.post('/checkout/process', {
       customer_name: form.customer_name,
       customer_email: form.customer_email,

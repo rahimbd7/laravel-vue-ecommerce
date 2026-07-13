@@ -46,6 +46,21 @@
         </div>
 
         <div class="p-6">
+          <!-- ✅ Show cancellation reason if order is cancelled -->
+          <div v-if="order.status?.order === 'cancelled' && order.cancellation_reason" 
+               class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h4 class="text-sm font-semibold text-red-800">Order Cancelled</h4>
+                <p class="text-sm text-red-600 mt-1">{{ order.cancellation_reason }}</p>
+                <p class="text-xs text-red-500 mt-1">Cancelled on: {{ formatDate(order.cancelled_at || order.timestamps?.updated_at) }}</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Order Items -->
           <h3 class="font-semibold text-gray-900 mb-3">Order Items</h3>
           <div class="space-y-3 mb-6">
@@ -113,7 +128,7 @@
             <p v-if="order.shipping.tracking_number" class="text-sm text-gray-600">Tracking: {{ order.shipping.tracking_number }}</p>
           </div>
 
-          <!-- Cancel Button -->
+          <!-- Cancel Button - Hide if order is already cancelled -->
           <div v-if="canCancelOrder(order)" class="mt-6 pt-6 border-t border-gray-200 flex justify-end">
             <button @click="confirmCancelOrder" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition">Cancel Order</button>
           </div>
@@ -167,31 +182,79 @@ const fetchOrder = async () => {
 
 const canCancelOrder = (order: any): boolean => {
   if (!order?.status?.order) return false
+  // ✅ Hide cancel button if order is already cancelled
+  if (order.status.order === 'cancelled') return false
   return ['pending', 'processing'].includes(order.status.order) && order.status.payment !== 'paid'
 }
 
 const confirmCancelOrder = async () => {
-  const result = await Swal.fire({
+  // ✅ Fixed: Added missing closing quote and proper HTML
+  const { value: cancellationReason, isConfirmed } = await Swal.fire({
     title: 'Cancel Order?',
-    text: `Cancel order #${order.value.order_number}?`,
+    html: `
+      <div class="text-left">
+        <p class="text-gray-600 mb-4">Are you sure you want to cancel order <strong>#${order.value.order_number}</strong>?</p>
+        <div class="mb-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Reason for Cancellation <span class="text-red-500">*</span>
+          </label>
+          <textarea 
+            id="cancellation-reason" 
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#00685F] focus:ring-1 focus:ring-[#00685F]" 
+            placeholder="Please tell us why you're cancelling this order..."
+            rows="4"
+            maxlength="500"
+          ></textarea>
+          <p class="text-xs text-gray-500 mt-1">Maximum 500 characters</p>
+        </div>
+      </div>
+    `,
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#d33',
     cancelButtonColor: '#00685F',
     confirmButtonText: 'Yes, cancel it',
-    cancelButtonText: 'No, keep it'
+    cancelButtonText: 'No, keep it',
+    width: '500px',
+    focusConfirm: false,
+    preConfirm: () => {
+      const reason = (document.getElementById('cancellation-reason') as HTMLTextAreaElement)?.value?.trim()
+      if (!reason) {
+        Swal.showValidationMessage('Please provide a reason for cancellation')
+        return false
+      }
+      if (reason.length > 500) {
+        Swal.showValidationMessage('Reason cannot exceed 500 characters')
+        return false
+      }
+      return reason
+    }
   })
 
-  if (!result.isConfirmed) return
+  if (!isConfirmed) return
+  if (!cancellationReason) return
 
   try {
-    const response = await api.post(`/orders/${order.value.id}/cancel`, { cancellation_reason: 'Cancelled by customer' })
+    const response = await api.post(`/orders/${order.value.id}/cancel`, { 
+      cancellation_reason: cancellationReason 
+    })
+    
     if (response.data.status === 'success') {
-      await Swal.fire({ icon: 'success', title: 'Cancelled', text: 'Order cancelled successfully', confirmButtonColor: '#00685F' })
+      await Swal.fire({ 
+        icon: 'success', 
+        title: 'Cancelled', 
+        text: 'Order cancelled successfully', 
+        confirmButtonColor: '#00685F' 
+      })
       fetchOrder()
     }
   } catch (err: any) {
-    await Swal.fire({ icon: 'error', title: 'Error', text: err.response?.data?.message || 'Failed to cancel', confirmButtonColor: '#00685F' })
+    await Swal.fire({ 
+      icon: 'error', 
+      title: 'Error', 
+      text: err.response?.data?.message || 'Failed to cancel', 
+      confirmButtonColor: '#00685F' 
+    })
   }
 }
 
