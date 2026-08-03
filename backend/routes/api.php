@@ -1,14 +1,18 @@
 <?php
 
 use App\Http\Controllers\API\Admin\AdminCategoryController;
+use App\Http\Controllers\API\Admin\AdminCouponController;
 use App\Http\Controllers\API\Admin\AdminDashboardController;
+use App\Http\Controllers\API\Admin\AdminOrderController;
 use App\Http\Controllers\API\Admin\AdminPayoutController;
+use App\Http\Controllers\API\Admin\AdminProductController;
 use App\Http\Controllers\API\Admin\AdminUserController;
 use App\Http\Controllers\API\Admin\AdminVendorController;
 use App\Http\Controllers\API\Auth\AuthController;
 use App\Http\Controllers\API\Cart\CartController;
 use App\Http\Controllers\API\Category\CategoryController;
 use App\Http\Controllers\API\Checkout\CheckoutController;
+use App\Http\Controllers\CouponController;
 use App\Http\Controllers\API\Order\OrderController;
 use App\Http\Controllers\API\Payment\PaymentController;
 use App\Http\Controllers\API\Product\ProductController;
@@ -19,6 +23,7 @@ use App\Http\Controllers\API\Profile\ProfileController;
 use App\Http\Controllers\API\Transaction\TransactionController;
 use App\Http\Controllers\API\Vendor\VendorApplicationController;
 use App\Http\Controllers\API\Vendor\VendorController;
+use App\Http\Controllers\API\Vendor\VendorCouponController;
 use App\Http\Controllers\API\Vendor\VendorPayoutController;
 use App\Http\Controllers\API\Vendor\VendorProfileController;
 use App\Http\Controllers\Api\WishList\WishlistController;
@@ -66,7 +71,6 @@ Route::prefix('v1')->group(function () {
     });
 });
 
-
 //public routes for carts
 // ============ PUBLIC ROUTES (No Auth Required) ============
 // Cart routes - work for both guests and authenticated users
@@ -93,27 +97,24 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [ProfileController::class, 'me']);
     Route::put('/profile', [ProfileController::class, 'update']);
-    Route::put('/profile/avatar', [ProfileController::class, 'updateAvatar']);
+    Route::put('/profile/avatar', [ProfileController::class, 'updateAvatarFromUrl']);
     Route::put('/profile/address', [ProfileController::class, 'updateAddress']);
     Route::get('/profile/address', [ProfileController::class, 'getAddress']);
     Route::put('/profile/change-password', [ProfileController::class, 'changePassword']);
 });
 
-
+Route::get('wishlist/check/{productId}', [WishlistController::class, 'check']); // Check if in wishlist
 Route::middleware(['auth:sanctum'])->group(function () {
     // Wishlist Routes
     Route::prefix('wishlist')->group(function () {
-        Route::get('/', [WishlistController::class, 'index']);           // Get wishlist
-        Route::post('/add', [WishlistController::class, 'store']);       // Add to wishlist
+        Route::get('/', [WishlistController::class, 'index']);                        // Get wishlist
+        Route::post('/add', [WishlistController::class, 'store']);                    // Add to wishlist
         Route::delete('/remove/{productId}', [WishlistController::class, 'destroy']); // Remove from wishlist
-        Route::post('/toggle', [WishlistController::class, 'toggle']);   // Toggle wishlist
-        Route::get('/check/{productId}', [WishlistController::class, 'check']); // Check if in wishlist
-        Route::get('/count', [WishlistController::class, 'count']);      // Get wishlist count
-        Route::delete('/clear', [WishlistController::class, 'clear']);   // Clear wishlist
+        Route::post('/toggle', [WishlistController::class, 'toggle']);                // Toggle wishlist
+        Route::get('/count', [WishlistController::class, 'count']);                   // Get wishlist count
+        Route::delete('/clear', [WishlistController::class, 'clear']);                // Clear wishlist
     });
 });
-
-
 
 // Order Routes - Single route group with auth only
 //Role-based authorization handled in controller
@@ -124,9 +125,6 @@ Route::middleware(['auth:sanctum', 'role:customer'])->prefix('orders')->group(fu
     Route::put('/{order}', [OrderController::class, 'update'])->name('orders.update');
     Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
 });
-
-
-
 
 /*
  * Vendor Routes
@@ -139,8 +137,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // ============ VENDOR PROFILE ROUTES ============
-// ✅ NEW: Vendor profile endpoints
-
+//  Vendor profile endpoints
 
 // ============ VENDOR PROFILE ROUTES ============
 Route::middleware(['auth:sanctum', 'role:vendor'])->prefix('vendor')->group(function () {
@@ -148,7 +145,7 @@ Route::middleware(['auth:sanctum', 'role:vendor'])->prefix('vendor')->group(func
     Route::prefix('profile')->group(function () {
         Route::get('/', [VendorProfileController::class, 'index']);
         Route::put('/', [VendorProfileController::class, 'update']);
-        Route::post('/logo', [VendorProfileController::class, 'updateLogo']);
+        Route::post('/logo', [VendorProfileController::class, 'updateLogoFromUrl']);
         Route::get('/stats', [VendorProfileController::class, 'stats']);
         Route::get('/analytics', [VendorProfileController::class, 'analytics']);
     });
@@ -158,6 +155,11 @@ Route::middleware(['auth:sanctum', 'role:vendor'])->prefix('vendor')->group(func
         Route::get('/', [VendorProfileController::class, 'getShipping']);
         Route::put('/', [VendorProfileController::class, 'updateShipping']);
     });
+    //coupons
+    Route::get('/coupons', [VendorCouponController::class, 'index']);
+    Route::post('/coupons', [VendorCouponController::class, 'store']);
+    Route::get('/coupons/analytics', [VendorCouponController::class, 'analytics']);
+
 });
 
 /*
@@ -225,7 +227,6 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'role:vendor'])->group(function
     });
 });
 
-
 /**
  * *Order Management Routes by Vendors
  */
@@ -240,7 +241,6 @@ Route::middleware(['auth:sanctum', 'role:vendor'])->prefix('vendor')->group(func
         Route::put('/orders/{orderId}/status', [App\Http\Controllers\API\Vendor\VendorDashboardController::class, 'updateOrderStatus']);
     });
 });
-
 
 /**
  * *Authenticated Review Actions (Customer/Vendor/Admin)
@@ -263,7 +263,6 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(functi
     Route::post('products/{product}/reviews/{review}/reject', [ProductReviewController::class, 'reject']);
 });
 
-
 //carts routes
 Route::prefix('cart')->group(function () {
     Route::get('/', [CartController::class, 'index']);
@@ -282,7 +281,6 @@ Route::prefix('cart')->group(function () {
 
 Route::post('/', [OrderController::class, 'store'])->name('orders.store')->middleware('role:admin');
 
-
 /// ============ AUTHENTICATED ONLY ROUTES ============
 Route::middleware(['auth:sanctum'])->group(function () {
     // Cart sync (authenticated only)
@@ -290,7 +288,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/sync', [CartController::class, 'syncGuestCart']);
     });
 });
-
 
 // Public routes (guest + authenticated both work)
 Route::prefix('cart')->group(function () {
@@ -304,14 +301,11 @@ Route::prefix('cart')->group(function () {
     Route::post('/items/{cartItemId}/move-to-cart', [CartController::class, 'moveToCart']);
 });
 
-
 // ============ CHECKOUT ROUTES ============
 Route::middleware(['auth:sanctum'])->prefix('checkout')->group(function () {
     Route::get('/summary', [CheckoutController::class, 'summary']);
     Route::post('/process', [CheckoutController::class, 'process']);
 });
-
-
 
 // ============ PAYMENT ROUTES ============
 Route::middleware(['auth:sanctum'])->prefix('payments')->group(function () {
@@ -350,8 +344,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/transactions', [TransactionController::class, 'adminTransactions']);
 });
 
-
-// ============ ADMIN DASHBOARD ROUTES ============
+//============ ADMIN DASHBOARD ROUTES ============
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
     Route::prefix('dashboard')->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index']);
@@ -364,7 +357,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
         Route::get('/top-vendors', [AdminDashboardController::class, 'topVendors']);
         Route::post('/clear-cache', [AdminDashboardController::class, 'clearCache']);
     });
-     // ===================== USER MANAGEMENT =====================
+    // ===================== USER MANAGEMENT =====================
     Route::prefix('users')->group(function () {
         Route::get('/', [AdminUserController::class, 'index']);
         Route::post('/', [AdminUserController::class, 'store']);
@@ -379,4 +372,63 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
         Route::post('/bulk-delete', [AdminUserController::class, 'bulkDelete']);
         Route::post('/bulk-status', [AdminUserController::class, 'bulkStatus']);
     });
+// ===================== ADMIN ORDER MANAGEMENT =====================
+
+    Route::prefix('orders')->group(function () {
+        Route::get('/', [AdminOrderController::class, 'index']);
+        Route::get('/stats', [AdminOrderController::class, 'stats']);
+        Route::get('/export', [AdminOrderController::class, 'export']);
+        Route::get('/{id}', [AdminOrderController::class, 'show']);
+        Route::get('/{id}/timeline', [AdminOrderController::class, 'timeline']);
+        Route::get('/vendor/{vendorId}', [AdminOrderController::class, 'vendorOrders']);
+        Route::put('/{id}/status', [AdminOrderController::class, 'updateStatus']);
+        Route::post('/{id}/cancel', [AdminOrderController::class, 'cancel']);
+    });
+    Route::prefix('dashboard/products')->group(function () {
+        Route::get('/', [AdminProductController::class, 'index']);
+        Route::get('/stats', [AdminProductController::class, 'stats']);
+        Route::get('/export', [AdminProductController::class, 'export']);
+        Route::get('/{id}', [AdminProductController::class, 'show']);
+        Route::put('/{id}', [AdminProductController::class, 'update']);
+        Route::delete('/{id}', [AdminProductController::class, 'destroy']);
+        Route::post('/{id}/restore', [AdminProductController::class, 'restore']);
+        Route::put('/{id}/toggle-visibility', [AdminProductController::class, 'toggleVisibility']);
+        Route::post('/bulk-action', [AdminProductController::class, 'bulkAction']);
+        Route::get('/vendor/{vendorId}', [AdminProductController::class, 'vendorProducts']);
+    });
+// ============ ADMIN COUPON ROUTES ============
+    Route::prefix('coupons')->group(function () {
+        Route::get('/analytics', [AdminCouponController::class, 'analytics']);
+        Route::get('/', [AdminCouponController::class, 'index']);
+        Route::post('/', [AdminCouponController::class, 'store']);
+        Route::get('/{id}', [AdminCouponController::class, 'show']);
+        Route::put('/{id}', [AdminCouponController::class, 'update']);
+        Route::delete('/{id}', [AdminCouponController::class, 'destroy']);
+        Route::post('/{id}/toggle-status', [AdminCouponController::class, 'toggleStatus']);
+        Route::get('/export', [AdminCouponController::class, 'export']);
+    });
+});
+
+// ============ VENDOR COUPON ROUTES ============
+Route::middleware(['auth:sanctum', 'role:vendor'])->prefix('vendor')->group(function () {
+    Route::prefix('coupons')->group(function () {
+        Route::get('/', [VendorCouponController::class, 'index']);
+        Route::post('/', [VendorCouponController::class, 'store']);
+        Route::get('/{id}', [VendorCouponController::class, 'show']);
+        Route::put('/{id}', [VendorCouponController::class, 'update']);
+        Route::delete('/{id}', [VendorCouponController::class, 'destroy']);
+        Route::post('/{id}/toggle-status', [VendorCouponController::class, 'toggleStatus']);
+        Route::get('/analytics', [VendorCouponController::class, 'analytics']);
+    });
+});
+
+// ============ user COUPON ROUTES ============
+Route::middleware(['auth:sanctum'])->prefix('coupons')->group(function () {
+    Route::get('/available', [CouponController::class, 'available']);
+    Route::post('/validate', [CouponController::class, 'validateCoupon']);
+    Route::post('/apply', [CouponController::class, 'apply']);
+    Route::delete('/remove', [CouponController::class, 'remove']);
+    Route::get('/applied', [CouponController::class, 'applied']);
+    Route::delete('/clear', [CouponController::class, 'clear']);
+    Route::get('/history', [CouponController::class, 'history']);
 });
