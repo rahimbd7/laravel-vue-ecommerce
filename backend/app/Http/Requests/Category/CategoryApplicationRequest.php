@@ -20,7 +20,7 @@ class CategoryApplicationRequest extends FormRequest {
             'name'             => $this->isMethod('post') ? 'required|string|max:255' : 'sometimes|string|max:255',
             'description'      => 'nullable|string',
             'parent_id'        => 'nullable|exists:categories,id',
-            'image'            => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image'            => 'sometimes|string|max:1024',
             'icon'             => 'nullable|string|max:50',
             'position'         => 'nullable|integer',
             'is_active'        => 'sometimes|boolean',
