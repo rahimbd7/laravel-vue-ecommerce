@@ -38,7 +38,7 @@ class TransactionController extends Controller
 
     public function adminTransactions(Request $request)
     {
-        $this->authorize('viewAny', \App\Models\TransactionLog::class);
+        // $this->authorize('viewAny', \App\Models\TransactionLog::class);
 
         $query = \App\Models\TransactionLog::with(['user'])
             ->orderBy('created_at', 'desc');
