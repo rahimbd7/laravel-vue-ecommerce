@@ -70,6 +70,21 @@ class VendorProfileController extends Controller
         }
     }
 
+    public function updateLogoFromUrl(Request $request)
+    {
+        $request->validate([
+            'logo_url' => 'required|string|url|max:500',
+        ]);
+
+        try {
+            $user = Auth::user();
+            $logoUrl = $request->logo_url;
+            $result = $this->vendorProfileService->updateLogoFromUrl($user, $logoUrl);
+            return $this->successResponse($result, "Vendor logo updated successfully");
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
     public function stats()
     {
         try {

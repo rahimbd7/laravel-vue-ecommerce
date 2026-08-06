@@ -113,6 +113,34 @@ class VendorProfileService
         ];
     }
 
+// handle cloudinary url for logo
+public function updateLogoFromUrl(User $user, string $logoUrl): array
+    {
+        $vendor = $user->vendor;
+
+        if (!$vendor) {
+            throw new \Exception('Vendor profile not found');
+        }
+
+        // Delete old logo if it exists and is a local file (not Cloudinary)
+        if ($vendor->store_logo) {
+            $oldLogo = $vendor->store_logo;
+            // Only delete if it's a local file (not a Cloudinary URL)
+            if (!filter_var($oldLogo, FILTER_VALIDATE_URL)) {
+                Storage::disk('public')->delete($oldLogo);
+            }
+        }
+
+        // Store the Cloudinary URL directly
+        $vendor->store_logo = $logoUrl;
+        $vendor->save();
+
+        return [
+            'store_logo' => $logoUrl,
+            'store_logo_path' => $logoUrl,
+        ];
+    }
+
     public function updateShippingSettings(User $user, array $data): array
     {
         $vendor = $user->vendor;

@@ -4,6 +4,7 @@
 namespace App\Services;
 
 use App\Models\Product;
+use App\Models\ProductImage;
 use Illuminate\Support\Facades\DB;
 
 class ProductService {
@@ -21,8 +22,9 @@ class ProductService {
         $this->reviewService    = $reviewService;
     }
 
-    /**
+      /**
      * Create product with all relations
+     * ✅ Supports both local uploads and Cloudinary URLs
      */
     public function create(array $data, array $images = [], array $variations = []) {
         return DB::transaction(function () use ($data, $images, $variations) {
@@ -34,9 +36,29 @@ class ProductService {
             // Create product
             $product = Product::create($data);
 
-            // Handle images
-            if (! empty($images)) {
-                $this->imageService->attachToProduct($product, $images);
+            // ✅ Handle images - Hybrid (supports both local and Cloudinary)
+            if (!empty($images)) {
+                foreach ($images as $index => $imageData) {
+                    // Check if it's a Cloudinary image (has secure_url)
+                    if (isset($imageData['secure_url'])) {
+                        // ✅ Cloudinary image
+                        ProductImage::create([
+                            'product_id' => $product->id,
+                            'image_url' => $imageData['secure_url'],
+                            'thumbnail_url' => $imageData['thumbnail'] ?? $imageData['secure_url'],
+                            'medium_url' => $imageData['medium'] ?? $imageData['secure_url'],
+                            'large_url' => $imageData['large'] ?? $imageData['secure_url'],
+                            'cloudinary_public_id' => $imageData['public_id'] ?? null,
+                            'is_primary' => $imageData['is_primary'] ?? ($index === 0),
+                            'order' => $index,
+                            'mime_type' => 'image/webp',
+                        ]);
+                    } else {
+                        // ✅ Local file upload (handled by ProductImageService)
+                        $this->imageService->attachToProduct($product, $images);
+                        break; // Exit loop since all images are handled together
+                    }
+                }
             }
 
             // Handle variations
@@ -56,22 +78,48 @@ class ProductService {
 
     /**
      * Update product
+     * ✅ Supports both local uploads and Cloudinary URLs
      */
     public function update(Product $product, array $data, array $images = [], array $variations = []) {
         return DB::transaction(function () use ($product, $data, $images, $variations) {
             // Update product
             $product->update($data);
 
-            // Handle images
-            if (! empty($images)) {
-                $this->imageService->syncForProduct($product, $images);
+            // ✅ Handle images - Hybrid
+            if (!empty($images)) {
+                // Delete existing images
+                foreach ($product->images as $image) {
+                    $image->delete();
+                }
+
+                // Create new images
+                foreach ($images as $index => $imageData) {
+                    if (isset($imageData['secure_url'])) {
+                        // ✅ Cloudinary image
+                        ProductImage::create([
+                            'product_id' => $product->id,
+                            'image_url' => $imageData['secure_url'],
+                            'thumbnail_url' => $imageData['thumbnail'] ?? $imageData['secure_url'],
+                            'medium_url' => $imageData['medium'] ?? $imageData['secure_url'],
+                            'large_url' => $imageData['large'] ?? $imageData['secure_url'],
+                            'cloudinary_public_id' => $imageData['public_id'] ?? null,
+                            'is_primary' => $imageData['is_primary'] ?? ($index === 0),
+                            'order' => $index,
+                            'mime_type' => 'image/webp',
+                        ]);
+                    } else {
+                        // ✅ Local file upload (handled by ProductImageService)
+                        $this->imageService->syncForProduct($product, $images);
+                        break;
+                    }
+                }
             }
 
             // Handle variations
             if (isset($data['has_variations'])) {
-                if ($data['has_variations'] && ! empty($variations)) {
+                if ($data['has_variations'] && !empty($variations)) {
                     $this->variationService->bulkUpdate($product, $variations);
-                } elseif (! $data['has_variations']) {
+                } elseif (!$data['has_variations']) {
                     $product->variations()->delete();
                 }
             }
@@ -91,9 +139,16 @@ class ProductService {
      */
     public function delete(Product $product, $force = false) {
         return DB::transaction(function () use ($product, $force) {
-            // Delete images from storage
+            // Delete images (both local files and database records)
             foreach ($product->images as $image) {
-                $this->imageService->delete($image);
+                // For local images, delete the files
+                if (!$image->cloudinary_public_id) {
+                    $this->imageService->delete($image);
+                } else {
+                    // For Cloudinary images, just delete the database record
+                    // (Cloudinary images remain on Cloudinary)
+                    $image->delete();
+                }
             }
 
             if ($force) {

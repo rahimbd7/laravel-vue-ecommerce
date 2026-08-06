@@ -69,6 +69,21 @@ class ProfileController extends Controller
         return $this->successResponse($result, "Avatar updated successfully");
     }
 
+
+    public function updateAvatarFromUrl(Request $request)
+    {
+        $request->validate([
+            'avatar_url' => 'required|string|url|max:500',
+        ]);
+
+        $user = Auth::user();
+        $avatarUrl = $request->avatar_url;
+        
+        $result = $this->profileService->updateAvatarFromUrl($user, $avatarUrl);
+
+        return $this->successResponse($result, "Avatar updated successfully");
+    }
+
     /**
      * PUT /api/change-password - Change user password
      */

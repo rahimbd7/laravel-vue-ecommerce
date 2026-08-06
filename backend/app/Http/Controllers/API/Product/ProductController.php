@@ -68,7 +68,12 @@ class ProductController extends Controller
             $data['vendor_id'] = $vendor->id;
 
             $variations = $data['variations'] ?? [];
-            $images = $request->file('images', []);
+
+            // ✅ Get images from request input (Cloudinary URLs) NOT from files
+            $images = $request->input('images', []);
+
+            // ✅ Remove images from data to avoid validation issues
+            unset($data['images']);
 
             $product = $this->productService->create($data, $images, $variations);
 
@@ -139,7 +144,12 @@ class ProductController extends Controller
 
             $data = $request->validated();
             $variations = $data['variations'] ?? [];
-            $images = $request->file('images', []);
+
+            // ✅ Get images from request input (Cloudinary URLs) NOT from files
+            $images = $request->input('images', []);
+
+            // ✅ Remove images from data to avoid validation issues
+            unset($data['images']);
 
             $product = $this->productService->update($product, $data, $images, $variations);
 

@@ -95,6 +95,15 @@ class WishlistController extends Controller
     public function check(Request $request, int $productId): JsonResponse
     {
         $user = $request->user();
+
+        if (!$user) {
+        return response()->json([
+            'status' => 'success',
+            'data' => ['in_wishlist' => false]
+        ]);
+    }
+
+
         $isInWishlist = $this->wishlistService->checkInWishlist($user, $productId);
 
         return response()->json([
