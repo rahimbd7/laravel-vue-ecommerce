@@ -82,41 +82,29 @@ class Product extends Model {
         parent::boot();
 
         static::creating(function ($product) {
-            // 🟢 Auto-generate slug if not provided
             if (empty($product->slug)) {
                 $product->slug = self::generateUniqueSlug($product->name);
             }
-
-            // 🟢 Auto-generate SKU if not provided
             if (empty($product->sku)) {
                 $product->sku = self::generateUniqueSku();
             }
-
-            // 🟢 Auto-generate meta tags if not provided
             $product->generateMetaTags();
         });
 
         static::updating(function ($product) {
-            // 🟢 Update slug if name changed and slug not manually set
-            if ($product->isDirty('name') && !$product->isDirty('slug')) {
+            if ($product->isDirty('name') && ! $product->isDirty('slug')) {
                 $product->slug = self::generateUniqueSlug($product->name, $product->id);
             }
-
-            // 🟢 Update meta if needed
             $product->handleMetaUpdate();
         });
     }
 
     // ===================== AUTO-GENERATION METHODS =====================
 
-    /**
-     * Generate unique slug
-     */
-    public static function generateUniqueSlug(string $name, $excludeId = null): string
-    {
-        $slug = Str::slug($name);
+    public static function generateUniqueSlug(string $name, $excludeId = null): string {
+        $slug         = Str::slug($name);
         $originalSlug = $slug;
-        $counter = 1;
+        $counter      = 1;
 
         $query = self::where('slug', $slug);
         if ($excludeId) {
@@ -135,106 +123,64 @@ class Product extends Model {
         return $slug;
     }
 
-    /**
-     * Generate unique SKU
-     */
-    public static function generateUniqueSku(): string
-    {
+    public static function generateUniqueSku(): string {
         $prefix = 'SKU';
         $random = strtoupper(Str::random(6));
-        $sku = $prefix . '-' . $random;
+        $sku    = $prefix . '-' . $random;
 
         while (self::where('sku', $sku)->exists()) {
             $random = strtoupper(Str::random(6));
-            $sku = $prefix . '-' . $random;
+            $sku    = $prefix . '-' . $random;
         }
 
         return $sku;
     }
 
-    /**
-     * Generate meta tags (called on creation)
-     */
-    public function generateMetaTags(): void
-    {
-        // Meta Title
+    public function generateMetaTags(): void {
         if (empty($this->meta_title)) {
             $this->meta_title = $this->name;
         }
-
-        // Meta Description
         if (empty($this->meta_description)) {
-            $description = strip_tags($this->description ?? '');
+            $description            = strip_tags($this->description ?? '');
             $this->meta_description = Str::limit($description, 160);
         }
-
-        // Meta Keywords
         if (empty($this->meta_keywords)) {
             $this->meta_keywords = self::generateKeywords($this->name);
         }
     }
 
-    /**
-     * Handle meta updates (called on update)
-     */
-    public function handleMetaUpdate(): void
-    {
+    public function handleMetaUpdate(): void {
         $dirty = $this->getDirty();
 
-        // If name changed and meta_title was NOT manually provided
-        if (isset($dirty['name']) && !$this->wasManuallyFilled('meta_title')) {
+        if (isset($dirty['name']) && ! $this->wasManuallyFilled('meta_title')) {
             $this->meta_title = $this->name;
         }
-
-        // If description changed and meta_description was NOT manually provided
-        if (isset($dirty['description']) && !$this->wasManuallyFilled('meta_description')) {
-            $description = strip_tags($this->description ?? '');
+        if (isset($dirty['description']) && ! $this->wasManuallyFilled('meta_description')) {
+            $description            = strip_tags($this->description ?? '');
             $this->meta_description = Str::limit($description, 160);
         }
-
-        // If name changed and meta_keywords was NOT manually provided
-        if (isset($dirty['name']) && !$this->wasManuallyFilled('meta_keywords')) {
+        if (isset($dirty['name']) && ! $this->wasManuallyFilled('meta_keywords')) {
             $this->meta_keywords = self::generateKeywords($this->name);
         }
     }
 
-    /**
-     * Check if a field was manually set in the request
-     */
-    private function wasManuallyFilled(string $field): bool
-    {
-        return $this->$field !== null &&
-               $this->$field !== $this->getOriginal($field);
+    private function wasManuallyFilled(string $field): bool {
+        return $this->$field !== null && $this->$field !== $this->getOriginal($field);
     }
 
-    /**
-     * Generate keywords from product name
-     */
-    private static function generateKeywords($name): string
-    {
-        $words = explode(' ', $name);
-        $keywords = array_slice($words, 0, 5);
-
-        // Remove common words
+    private static function generateKeywords($name): string {
+        $words       = explode(' ', $name);
+        $keywords    = array_slice($words, 0, 5);
         $commonWords = ['the', 'a', 'an', 'and', 'or', 'but', 'for', 'nor', 'on', 'at', 'to', 'by'];
-        $keywords = array_diff($keywords, $commonWords);
-
+        $keywords    = array_diff($keywords, $commonWords);
         return implode(', ', $keywords);
     }
 
-    /**
-     * Accessor for meta title with fallback
-     */
-    public function getMetaTitleFallbackAttribute(): string
-    {
+    public function getMetaTitleFallbackAttribute(): string {
         return $this->meta_title ?? $this->name;
     }
 
-    /**
-     * Accessor for meta description with fallback
-     */
-    public function getMetaDescriptionFallbackAttribute(): string
-    {
+    public function getMetaDescriptionFallbackAttribute(): string {
         return $this->meta_description ?? Str::limit(strip_tags($this->description ?? ''), 160);
     }
 
@@ -288,8 +234,34 @@ class Product extends Model {
         return $query->where('vendor_id', $vendorId);
     }
 
+    // public function scopeByCategory($query, $categoryId) {
+    //     return $query->where('category_id', $categoryId);
+    // }
     public function scopeByCategory($query, $categoryId) {
-        return $query->where('category_id', $categoryId);
+        // Get the category with its children
+        $category = Category::with('children')->find($categoryId);
+
+        if (! $category) {
+            return $query->where('category_id', $categoryId);
+        }
+
+        // Get all child category IDs
+        $categoryIds = [$categoryId];
+
+        // Recursively get all child IDs
+        $this->getAllChildIds($category, $categoryIds);
+
+        return $query->whereIn('category_id', $categoryIds);
+    }
+
+// Helper method to get all child IDs recursively
+    private function getAllChildIds($category, &$ids) {
+        foreach ($category->children as $child) {
+            $ids[] = $child->id;
+            if ($child->children->isNotEmpty()) {
+                $this->getAllChildIds($child, $ids);
+            }
+        }
     }
 
     public function scopeSearch($query, $term) {
@@ -303,6 +275,7 @@ class Product extends Model {
     }
 
     // ===================== ACCESSORS =====================
+
     public function getFinalPriceAttribute() {
         if ($this->compare_price && $this->compare_price > $this->price) {
             return $this->compare_price;
@@ -321,22 +294,34 @@ class Product extends Model {
         return $this->compare_price && $this->compare_price > $this->price;
     }
 
+    // ✅ SIMPLIFIED: Just return the stored URL, no generation
     public function getThumbnailAttribute() {
         $primary = $this->primaryImage;
-        if ($primary && $primary->thumbnail_url) {
-            return $primary->thumbnail_url;
+        if ($primary) {
+            return $primary->thumbnail_url ?? $primary->image_url;
         }
+
         $firstImage = $this->images()->first();
-        return $firstImage?->thumbnail_url ?? asset('images/no-image.jpg');
+        if ($firstImage) {
+            return $firstImage->thumbnail_url ?? $firstImage->image_url;
+        }
+
+        return asset('images/no-image.jpg');
     }
 
+    // ✅ SIMPLIFIED: Just return the stored URL, no generation
     public function getImageUrlAttribute() {
         $primary = $this->primaryImage;
-        if ($primary && $primary->image_url) {
+        if ($primary) {
             return $primary->image_url;
         }
+
         $firstImage = $this->images()->first();
-        return $firstImage?->image_url ?? asset('images/no-image.jpg');
+        if ($firstImage) {
+            return $firstImage->image_url;
+        }
+
+        return asset('images/no-image.jpg');
     }
 
     public function getStockStatusLabelAttribute() {
@@ -394,7 +379,7 @@ class Product extends Model {
 
     public function updateStockStatus() {
         $threshold = $this->low_stock_threshold ?? 5;
-        $stock = $this->stock_quantity ?? 0;
+        $stock     = $this->stock_quantity ?? 0;
 
         if ($stock <= 0) {
             $this->stock_status = 'out_of_stock';
@@ -407,8 +392,8 @@ class Product extends Model {
     }
 
     public function updateRating() {
-        $query = $this->reviews()->where('is_approved', true);
-        $this->review_count = $query->count();
+        $query                = $this->reviews()->where('is_approved', true);
+        $this->review_count   = $query->count();
         $this->average_rating = $query->avg('rating') ?: 0;
         $this->saveQuietly();
     }
@@ -421,15 +406,15 @@ class Product extends Model {
     }
 
     public function syncVariationPrices() {
-        if (!$this->has_variations) {
+        if (! $this->has_variations) {
             return $this;
         }
 
         $visibleVariations = $this->variations()->where('is_visible', true);
-        $lowest = $visibleVariations->min('price');
-        $totalStock = (int) $visibleVariations->sum('stock_quantity');
+        $lowest            = $visibleVariations->min('price');
+        $totalStock        = (int) $visibleVariations->sum('stock_quantity');
 
-        if (!is_null($lowest)) {
+        if (! is_null($lowest)) {
             $this->price = $lowest;
         }
 
@@ -441,14 +426,14 @@ class Product extends Model {
     }
 
     public function getLowestPrice() {
-        if (!$this->has_variations) {
+        if (! $this->has_variations) {
             return $this->price;
         }
         return $this->variations()->where('is_visible', true)->min('price') ?? $this->price;
     }
 
     public function getHighestPrice() {
-        if (!$this->has_variations) {
+        if (! $this->has_variations) {
             return $this->price;
         }
         return $this->variations()->where('is_visible', true)->max('price') ?? $this->price;

@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use App\Models\Payment;
 
 class Order extends Model
 {
@@ -24,6 +25,8 @@ class Order extends Model
         'fulfillment_status',
         'subtotal',
         'discount_total',
+        'coupon_id',
+        'coupon_discount',
         'tax_total',
         'shipping_total',
         'grand_total',
@@ -58,6 +61,7 @@ class Order extends Model
     protected $casts = [
         'subtotal' => 'decimal:2',
         'discount_total' => 'decimal:2',
+        'coupon_discount' => 'decimal:2',
         'tax_total' => 'decimal:2',
         'shipping_total' => 'decimal:2',
         'grand_total' => 'decimal:2',
@@ -104,6 +108,10 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+    public function coupon()
+    {
+        return $this->belongsTo(Coupon::class);
+    }
 
     // Scopes
     public function scopePending($query)
@@ -141,5 +149,34 @@ class Order extends Model
     public function canBeUpdated(): bool
     {
         return !in_array($this->status, ['delivered', 'completed', 'cancelled', 'refunded']);
+    }
+    public function hasCoupon(): bool
+    {
+        return !is_null($this->coupon_id);
+    }
+
+    public function getCouponDiscountAmount(): float
+    {
+        return $this->coupon_discount ?? 0;
+    }
+
+    public function getSubtotalAfterDiscount(): float
+    {
+        return $this->subtotal - $this->coupon_discount;
+    }
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+    // ✅ Get coupon code through relationship
+    public function getCouponCodeAttribute()
+    {
+        return $this->coupon ? $this->coupon->code : null;
+    }
+
+    // ✅ Get coupon name through relationship
+    public function getCouponNameAttribute()
+    {
+        return $this->coupon ? $this->coupon->name : null;
     }
 }

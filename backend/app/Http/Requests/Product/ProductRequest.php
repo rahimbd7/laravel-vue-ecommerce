@@ -43,6 +43,16 @@ class ProductRequest extends FormRequest
             'meta_description' => 'nullable|string|max:160',
             'meta_keywords' => 'nullable|string|max:255',
 
+            // ✅ Images - Handle both file uploads and Cloudinary URLs
+            'images' => 'nullable|array',
+            'images.*' => 'array', // Each image is an array
+            'images.*.secure_url' => 'required_with:images|string|url',
+            'images.*.public_id' => 'required_with:images|string',
+            'images.*.is_primary' => 'sometimes|boolean',
+            'images.*.thumbnail' => 'nullable|string|url',
+            'images.*.medium' => 'nullable|string|url',
+            'images.*.large' => 'nullable|string|url',
+
             // Optional
             'is_taxable' => 'sometimes|boolean',
             'tax_rate' => 'nullable|numeric|min:0|max:100',
@@ -75,9 +85,9 @@ class ProductRequest extends FormRequest
             'slug.unique' => 'This slug is already in use',
             'meta_title.max' => 'Meta title must not exceed 60 characters',
             'meta_description.max' => 'Meta description must not exceed 160 characters',
-            'images.*.image' => 'Each file must be an image',
-            'images.*.mimes' => 'Only JPEG, PNG, and JPG images are allowed',
-            'images.*.max' => 'Each image must not exceed 2MB',
+            'images.*.secure_url.required_with' => 'Image URL is required',
+            'images.*.secure_url.url' => 'Invalid image URL format',
+            'images.*.public_id.required_with' => 'Image public ID is required',
         ];
     }
 }

@@ -152,7 +152,107 @@ class Cart extends Model
 
         return $this;
     }
+    public function addCoupon($couponCode, $discountAmount, $couponId = null)
+    {
+        $coupons = $this->applied_coupons ?? [];
 
+        // Check if already applied
+        foreach ($coupons as $existing) {
+            if ($existing['code'] === $couponCode) {
+                return false;
+            }
+        }
+
+        $coupons[] = [
+            'code' => $couponCode,
+            'id' => $couponId,
+            'discount' => $discountAmount,
+            'applied_at' => now()->toISOString(),
+        ];
+
+        $this->applied_coupons = $coupons;
+        $this->coupon_code = $couponCode;
+        $this->coupon_discount = $this->getTotalDiscount();
+        $this->refreshTotals();
+
+        return true;
+    }
+
+    public function removeCoupon($couponCode)
+    {
+        $coupons = $this->applied_coupons ?? [];
+
+        $removed = false;
+        foreach ($coupons as $key => $coupon) {
+            if ($coupon['code'] === $couponCode) {
+                unset($coupons[$key]);
+                $removed = true;
+                break;
+            }
+        }
+
+        if (!$removed) {
+            return false;
+        }
+
+        $coupons = array_values($coupons);
+        $this->applied_coupons = $coupons;
+
+        if (!empty($coupons)) {
+            $last = end($coupons);
+            $this->coupon_code = $last['code'];
+            $this->coupon_discount = $this->getTotalDiscount();
+        } else {
+            $this->coupon_code = null;
+            $this->coupon_discount = 0;
+        }
+
+        $this->refreshTotals();
+        return true;
+    }
+
+    // ✅ Get total discount
+    public function getTotalDiscount()
+    {
+        $coupons = $this->applied_coupons ?? [];
+        return array_sum(array_column($coupons, 'discount'));
+    }
+
+    // ✅ Clear all coupons
+    public function clearCoupons()
+    {
+        $this->applied_coupons = [];
+        $this->coupon_code = null;
+        $this->coupon_discount = 0;
+        $this->discount_total = 0;
+        $this->refreshTotals();
+    }
+
+    // Refresh totals
+    public function refreshTotals()
+    {
+        $this->item_count = $this->items()->sum('quantity');
+        $this->subtotal = $this->items()->sum('subtotal');
+        $this->tax_total = $this->items()->sum('tax');
+        $this->discount_total = $this->getTotalDiscount();
+        $this->grand_total = $this->subtotal + $this->tax_total + $this->shipping_total - $this->discount_total;
+        $this->save();
+    }
+
+    public function isEmpty()
+    {
+        return $this->items()->count() === 0;
+    }
+
+    public function getTotalItems()
+    {
+        return $this->items()->sum('quantity');
+    }
+
+    public function getSubtotal()
+    {
+        return $this->items()->sum('subtotal');
+    }
     /**
      * Update item quantity
      */
@@ -188,20 +288,6 @@ class Cart extends Model
 
         return $this;
     }
-
-    /**
-     * Refresh cart totals (item_count, subtotal, grand_total)
-     */
-    public function refreshTotals()
-    {
-        $this->item_count = $this->items()->sum('quantity');
-        $this->subtotal = $this->items()->sum('subtotal');
-        $this->tax_total = $this->items()->sum('tax');
-        $this->grand_total = $this->subtotal + $this->tax_total + $this->shipping_total - $this->discount_total;
-
-        $this->save();
-    }
-
     /**
      * Clear all items from cart
      */
@@ -220,27 +306,15 @@ class Cart extends Model
         return $this;
     }
 
-    /**
-     * Check if cart is empty
-     */
-    public function isEmpty()
+    public function getAppliedCouponsAttribute($value)
     {
-        return $this->items()->count() === 0;
+        if (is_null($value)) {
+            return [];
+        }
+        return json_decode($value, true) ?? [];
     }
-
-    /**
-     * Get total number of items
-     */
-    public function getTotalItems()
+    public function setAppliedCouponsAttribute($value)
     {
-        return $this->items()->sum('quantity');
-    }
-
-    /**
-     * Get cart subtotal
-     */
-    public function getSubtotal()
-    {
-        return $this->items()->sum('subtotal');
+        $this->attributes['applied_coupons'] = json_encode($value);
     }
 }

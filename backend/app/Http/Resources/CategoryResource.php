@@ -16,16 +16,17 @@ class CategoryResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'uuid' => $this->uuid,
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
-            'image' => $this->image_url,
+            'image' => $this->image,
             'icon' => $this->icon,
             'parent_id' => $this->parent ? $this->parent->uuid : null,
             'position' => $this->position,
             'is_active' => $this->is_active,
             'is_featured' => $this->is_featured ? true : false ,
-            'product_count' => $this->product_count,
+            'product_count' => $this->products_count,
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
             //meta key words are array in the model, but we want to return them as a comma separated string in the API response

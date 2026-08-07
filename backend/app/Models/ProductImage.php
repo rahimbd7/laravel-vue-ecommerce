@@ -1,5 +1,4 @@
 <?php
-// app/Models/ProductImage.php
 
 namespace App\Models;
 
@@ -18,6 +17,9 @@ class ProductImage extends Model
         'thumbnail_url',
         'medium_url',
         'large_url',
+        'cloudinary_public_id',
+        'cloudinary_asset_id',
+        'cloudinary_version',
         'is_primary',
         'alt_text',
         'title',
@@ -35,6 +37,7 @@ class ProductImage extends Model
         'updated_at' => 'datetime',
     ];
 
+    // ✅ Simplified appends - just return stored URLs
     protected $appends = [
         'full_image_url',
         'full_thumbnail_url',
@@ -63,7 +66,6 @@ class ProductImage extends Model
         });
 
         static::deleted(function ($image) {
-            // If primary image is deleted, set another image as primary
             if ($image->is_primary) {
                 $newPrimary = $image->product->images()->first();
                 if ($newPrimary) {
@@ -81,27 +83,27 @@ class ProductImage extends Model
         return $this->belongsTo(Product::class);
     }
 
-    /**
-     * Accessors
-     */
+    // ===================== ACCESSORS =====================
+    // ✅ Simplified: Just return the stored URLs as-is
+
     public function getFullImageUrlAttribute()
     {
-        return $this->image_url ? asset('storage/' . $this->image_url) : null;
+        return $this->image_url;
     }
 
     public function getFullThumbnailUrlAttribute()
     {
-        return $this->thumbnail_url ? asset('storage/' . $this->thumbnail_url) : $this->full_image_url;
+        return $this->thumbnail_url ?? $this->image_url;
     }
 
     public function getFullMediumUrlAttribute()
     {
-        return $this->medium_url ? asset('storage/' . $this->medium_url) : $this->full_image_url;
+        return $this->medium_url ?? $this->image_url;
     }
 
     public function getFullLargeUrlAttribute()
     {
-        return $this->large_url ? asset('storage/' . $this->large_url) : $this->full_image_url;
+        return $this->large_url ?? $this->image_url;
     }
 
     /**

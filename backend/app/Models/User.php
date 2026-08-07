@@ -3,8 +3,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -115,5 +115,9 @@ class User extends Authenticatable {
 
     public function isInWishlist(int $productId): bool {
         return $this->wishlist()->where('product_id', $productId)->exists();
+    }
+    //cart relationship
+    public function cart(): HasOne {
+        return $this->hasOne(Cart::class, 'user_id');
     }
 }
