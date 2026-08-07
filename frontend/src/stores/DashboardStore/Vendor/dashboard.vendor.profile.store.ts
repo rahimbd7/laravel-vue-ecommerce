@@ -14,6 +14,7 @@ export const useVendorProfileStore = defineStore('vendorProfile', {
             shipping: false,
             analytics: false,
         },
+        storeLogo:'',
         error: {
             profile: null as string | null,
             stats: null as string | null,
@@ -135,7 +136,30 @@ export const useVendorProfileStore = defineStore('vendorProfile', {
                 this.loading.profile = false
             }
         },
+        async updateLogoFromUrl(logoUrl: string) {
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) throw new Error('Not authenticated')
 
+      this.loading.profile = true
+      this.error.profile = ''
+
+      try {
+        const response = await api.put('/vendor/profile/logo', {
+          logo_url: logoUrl
+        })
+
+        if (this.profile?.vendor) {
+          this.profile.vendor.store_logo = response.data.data.store_logo
+          this.storeLogo = response.data.data.store_logo
+        }
+        return response.data
+      } catch (error: any) {
+        this.error.profile = error.response?.data?.message || 'Failed to update logo'
+        throw error
+      } finally {
+        this.loading.profile = false
+      }
+    },
         async fetchStats(force = false) {
             const authStore = useAuthStore()
             if (!authStore.isAuthenticated) return null

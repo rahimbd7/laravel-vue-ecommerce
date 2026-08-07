@@ -9,11 +9,22 @@ import type {
   AddToCartRequest 
 } from '../types';
 
+// ✅ Define AppliedCoupon interface
+interface AppliedCoupon {
+  code: string;
+  id?: number;
+  discount: number;
+  applied_at: string;
+}
+
 interface CartState {
   id: number | null;
   uuid: string | null;
   items: CartItem[];
   itemCount: number;
+  couponCode: string | null;
+  couponDiscount: number;
+  appliedCoupons: AppliedCoupon[];
   subtotal: number;
   taxTotal: number;
   shippingTotal: number;
@@ -30,6 +41,9 @@ export const useCartStore = defineStore('cart', {
     uuid: null,
     items: [],
     itemCount: 0,
+    couponCode: null,
+    couponDiscount: 0,
+    appliedCoupons: [],
     subtotal: 0,      
     taxTotal: 0,      
     shippingTotal: 0, 
@@ -41,7 +55,7 @@ export const useCartStore = defineStore('cart', {
   }),
   
   getters: {
-     safeSubtotal: (state) => Number(state.subtotal) || 0,
+    safeSubtotal: (state) => Number(state.subtotal) || 0,
     safeGrandTotal: (state) => Number(state.grandTotal) || 0,
     safeDiscountTotal: (state) => Number(state.discountTotal) || 0,
     safeTaxTotal: (state) => Number(state.taxTotal) || 0,
@@ -51,7 +65,30 @@ export const useCartStore = defineStore('cart', {
     savedForLaterItems: (state): CartItem[] => state.items.filter(item => item.is_saved_for_later),
     totalItems: (state): number => state.itemCount,
     totalPrice: (state): number => state.grandTotal,
-    isEmpty: (state): boolean => state.itemCount === 0
+    isEmpty: (state): boolean => state.itemCount === 0,
+    
+    // ✅ Get total discount from all coupons
+    totalDiscount: (state): number => {
+      if (state.appliedCoupons && state.appliedCoupons.length > 0) {
+        return state.appliedCoupons.reduce((sum, c) => sum + (c.discount || 0), 0);
+      }
+      return state.couponDiscount || 0;
+    },
+    
+    // ✅ Get number of applied coupons
+    couponCount: (state): number => state.appliedCoupons?.length || 0,
+    
+    // ✅ Check if coupon limit is reached (max 3)
+    isCouponLimitReached: (state): boolean => (state.appliedCoupons?.length || 0) >= 3,
+    
+    // ✅ Get the last applied coupon code
+    lastCouponCode: (state): string | null => {
+      if (state.appliedCoupons && state.appliedCoupons.length > 0) {
+        const last = state.appliedCoupons[state.appliedCoupons.length - 1];
+        return last?.code || null;
+      }
+      return state.couponCode || null;
+    }
   },
   
   actions: {
@@ -69,7 +106,6 @@ export const useCartStore = defineStore('cart', {
         this.id = cart.id;
         this.uuid = cart.uuid;
         this.items = cart.items || [];
-        // ✅ Ensure numbers, not strings
         this.itemCount = Number(cart.item_count) || 0;
         this.subtotal = Number(cart.subtotal) || 0;
         this.taxTotal = Number(cart.tax_total) || 0;
@@ -77,12 +113,143 @@ export const useCartStore = defineStore('cart', {
         this.discountTotal = Number(cart.discount_total) || 0;
         this.grandTotal = Number(cart.grand_total) || 0;
         
+        // ✅ Fetch applied coupons from cart
+        if (cart.applied_coupons && cart.applied_coupons.length > 0) {
+          this.appliedCoupons = cart.applied_coupons;
+          const total = this.appliedCoupons.reduce((sum, c) => sum + (c.discount || 0), 0);
+          this.couponDiscount = total;
+          this.discountTotal = total;
+          
+          // ✅ Safely set couponCode
+          const last = this.appliedCoupons[this.appliedCoupons.length - 1];
+          this.couponCode = last?.code || null;
+        } else if (cart.coupon_code) {
+          // Fallback: single coupon
+          this.couponCode = cart.coupon_code;
+          this.couponDiscount = Number(cart.coupon_discount) || 0;
+          this.appliedCoupons = [{
+            code: cart.coupon_code,
+            discount: Number(cart.coupon_discount) || 0,
+            applied_at: new Date().toISOString()
+          }];
+        } else {
+          // No coupons
+          this.appliedCoupons = [];
+          this.couponCode = null;
+          this.couponDiscount = 0;
+        }
+        
         return cart;
       } finally {
         this.loading = false;
       }
     },
     
+    // ✅ Fetch applied coupons from server
+    async fetchAppliedCoupons(): Promise<void> {
+      try {
+        const response = await api.get('/coupons/applied');
+        if (response.data.status === 'success') {
+          this.appliedCoupons = response.data.data || [];
+          
+          // Update coupon discount
+          const total = this.appliedCoupons.reduce((sum, c) => sum + (c.discount || 0), 0);
+          this.couponDiscount = total;
+          this.discountTotal = total;
+          
+          // ✅ Safely update legacy fields
+          if (this.appliedCoupons.length > 0) {
+            const last = this.appliedCoupons[this.appliedCoupons.length - 1];
+            this.couponCode = last?.code || null;
+          } else {
+            this.couponCode = null;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch applied coupons:', error);
+      }
+    },
+    
+    // ✅ Apply a coupon
+    async applyCoupon(code: string): Promise<{ success: boolean; error?: string; data?: any }> {
+      this.loading = true;
+      try {
+        const response = await api.post('/coupons/apply', { code });
+        
+        if (response.data.status === 'success') {
+          const data = response.data.data;
+          
+          // Update applied coupons
+          this.appliedCoupons = data.applied_coupons || [];
+          
+          const total = this.appliedCoupons.reduce((sum, c) => sum + (c.discount || 0), 0);
+          this.couponDiscount = total;
+          this.discountTotal = total;
+          
+          // ✅ Safely update legacy fields
+          if (this.appliedCoupons.length > 0) {
+            const last = this.appliedCoupons[this.appliedCoupons.length - 1];
+            this.couponCode = last?.code || null;
+          } else {
+            this.couponCode = null;
+          }
+          
+          // Update grand total
+          this.grandTotal = this.subtotal - total;
+          
+          return { success: true, data: data };
+        }
+        return { success: false, error: response.data.message };
+      } catch (error: any) {
+        return { success: false, error: error.response?.data?.message };
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    // ✅ Remove a specific coupon
+    async removeCoupon(code: string): Promise<{ success: boolean; error?: string }> {
+      this.loading = true;
+      try {
+        const response = await api.delete('/coupons/remove', { 
+          data: { code: code }
+        });
+        
+        if (response.data.status === 'success') {
+          // Refetch applied coupons
+          await this.fetchAppliedCoupons();
+          return { success: true };
+        }
+        return { success: false, error: response.data.message };
+      } catch (error: any) {
+        return { success: false, error: error.response?.data?.message };
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    // ✅ Clear all coupons
+    async clearCoupons(): Promise<{ success: boolean; error?: string }> {
+      this.loading = true;
+      try {
+        const response = await api.delete('/coupons/clear');
+        
+        if (response.data.status === 'success') {
+          this.appliedCoupons = [];
+          this.couponCode = null;
+          this.couponDiscount = 0;
+          this.discountTotal = 0;
+          this.grandTotal = this.subtotal;
+          return { success: true };
+        }
+        return { success: false, error: response.data.message };
+      } catch (error: any) {
+        return { success: false, error: error.response?.data?.message };
+      } finally {
+        this.loading = false;
+      }
+    },
+
     async addItem(productId: number, quantity: number, variationId: number | null = null): Promise<{ success: boolean; error?: string }> {
       this.loading = true;
       try {

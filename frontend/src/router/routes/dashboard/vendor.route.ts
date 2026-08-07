@@ -1,4 +1,8 @@
 import { UserRole } from "@/types/common.types";
+import VendorCouponManagement from "@/views/Dashboard/vendor/coupons/VendorCouponManagement.vue";
+import VendorCreateCoupon from "@/views/Dashboard/vendor/coupons/VendorCreateCoupon.vue";
+import VendorEditCoupon from "@/views/Dashboard/vendor/coupons/VendorEditCoupon.vue";
+import VendorSingleCouponDetails from "@/views/Dashboard/vendor/coupons/VendorSingleCouponDetails.vue";
 import Detail from "@/views/Dashboard/vendor/orders/Detail.vue";
 import type { RouteRecordRaw } from 'vue-router';
 
@@ -55,6 +59,30 @@ export const vendorRoutes: RouteRecordRaw[] = [
     path: "vendor/shipping",
     name: "VendorShipping",
     component: () => import("@/views/Dashboard/vendor/shipping/Index.vue"),
+    meta: { roles: [UserRole.Vendor] },
+  },
+  {
+    path: "vendor/coupons/create",
+    name: "VendorCouponCreate",
+    component: () => VendorCreateCoupon,
+    meta: { roles: [UserRole.Vendor] },
+  },
+  {
+    path: "vendor/coupons/management",
+    name: "VendorCouponManagement",
+    component: () => VendorCouponManagement,
+    meta: { roles: [UserRole.Vendor] },
+  },
+  {
+    path: "vendor/coupons/:id/edit",
+    name: "VendorCouponEdit",
+    component: () => VendorEditCoupon,
+    meta: { roles: [UserRole.Vendor] },
+  },
+  {
+    path: "vendor/coupons/:id/details",
+    name: "VendorCouponDetails",
+    component: () => VendorSingleCouponDetails,
     meta: { roles: [UserRole.Vendor] },
   },
 ];

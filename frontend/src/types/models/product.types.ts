@@ -26,6 +26,8 @@ export interface ProductInventory {
 export interface ProductMedia {
   thumbnail: string
   image: string
+  images: ProductImage[]
+  
 }
 
 // Product Stats
@@ -69,15 +71,35 @@ export interface ProductVariation {
 
 // Product Image
 export interface ProductImage {
-  id: number
-  product_id: number
-  image: string
-  thumbnail: string
-  alt_text: string | null
-  is_primary: boolean
-  position: number
-  created_at: string
-  updated_at: string
+  id: number | string
+  image_url?: string
+  secure_url?: string
+  url?: string
+  thumbnail_url?: string
+  medium_url?: string
+  large_url?: string
+  thumbnail?: string
+  medium?: string
+  large?: string
+  is_primary?: boolean
+  cloudinary_public_id?: string
+  public_id?: string
+  urls?: {
+    original?: string
+    thumbnail?: string
+    medium?: string
+    large?: string
+    [key: string]: string | undefined
+  }
+  alt_text?: string
+  title?: string
+  caption?: string
+  order?: number
+  mime_type?: string
+  file_size?: number
+  source?: 'cloudinary' | 'local'
+  created_at?: string
+  updated_at?: string
 }
 
 // Main Product Interface
