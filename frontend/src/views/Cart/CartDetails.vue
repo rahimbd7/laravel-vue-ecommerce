@@ -63,8 +63,13 @@
                     <td class="px-6 py-4">
                       <div class="flex gap-4 items-start">
                         <div class="shrink-0">
-                          <img v-if="item.product?.media?.thumbnail" :src="item.product.media.thumbnail"
-                            :alt="item.product_name" class="w-16 h-16 rounded object-cover" />
+                          <img 
+                            v-if="getProductImage(item)" 
+                            :src="getProductImage(item)" 
+                            :alt="item.product_name" 
+                            class="w-16 h-16 rounded object-cover"
+                            @error="(e) => handleImageError(e, item)"
+                          />
                           <div v-else class="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
                             <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -124,8 +129,13 @@
               <div v-for="item in cartStore.activeItems" :key="item.id"
                 class="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
                 <div class="flex gap-3">
-                  <img v-if="item.product?.media?.thumbnail" :src="item.product.media.thumbnail"
-                    :alt="item.product_name" class="w-16 h-16 rounded object-cover" />
+                  <img 
+                    v-if="getProductImage(item)" 
+                    :src="getProductImage(item)" 
+                    :alt="item.product_name" 
+                    class="w-16 h-16 rounded object-cover"
+                    @error="(e) => handleImageError(e, item)"
+                  />
                   <div v-else class="w-16 h-16 bg-gray-100 rounded flex items-center justify-center shrink-0">
                     <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -248,6 +258,69 @@ const loading = ref(false)
 const updatingId = ref<number | null>(null)
 const deletingId = ref<number | null>(null)
 
+// ✅ Helper function to get product image from various formats
+const getProductImage = (item: any): string => {
+  if (!item?.product) return ''
+  
+  const product = item.product
+  const media = product.media
+  
+  // Try to get image from various sources
+  // 1. Check if media has thumbnail
+  if (media?.thumbnail) {
+    return media.thumbnail
+  }
+  
+  // 2. Check if media has image
+  if (media?.image) {
+    return media.image
+  }
+  
+  // 3. Check if product has direct image_url
+  if (product.image_url) {
+    return product.image_url
+  }
+  
+  // 4. Check if product has images array
+  if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+    const firstImage = product.images[0]
+    // Try to get thumbnail from the image object
+    if (firstImage.thumbnail || firstImage.thumbnail_url) {
+      return firstImage.thumbnail_url || firstImage.thumbnail
+    }
+    // Try to get URL from various fields
+    if (firstImage.image_url || firstImage.secure_url || firstImage.url) {
+      return firstImage.image_url || firstImage.secure_url || firstImage.url
+    }
+    // Try nested urls object
+    if (firstImage.urls?.thumbnail) {
+      return firstImage.urls.thumbnail
+    }
+    if (firstImage.urls?.original) {
+      return firstImage.urls.original
+    }
+  }
+  
+  // 5. Check for product thumbnail from media
+  if (product.media?.thumbnail) {
+    return product.media.thumbnail
+  }
+  
+  return ''
+}
+
+// ✅ Handle image loading errors
+const handleImageError = (event: Event, item: any) => {
+  const img = event.target as HTMLImageElement
+  if (img) {
+    // Show fallback with product initials
+    const productName = item?.product_name || 'Product'
+    const initials = productName.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
+    img.src = `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" font-size="40" text-anchor="middle" dy=".3em" fill="%239ca3af"%3E${initials}%3C/text%3E%3C/svg%3E`
+    img.onerror = null // Prevent infinite loop
+  }
+}
+
 // Methods
 const fetchCart = async () => {
   try {
@@ -267,26 +340,33 @@ const updateQuantity = async (cartItemId: number, newQuantity: number) => {
     updatingId.value = cartItemId
     const result = await cartStore.updateItem(cartItemId, newQuantity)
     if (!result.success) {
-      alert(`Error: ${result.error || 'Failed to update quantity'}`)
+      await showErrorAlert(result.error || 'Failed to update quantity')
     }
   } catch (err) {
-    alert('Failed to update quantity')
+    await showErrorAlert('Failed to update quantity')
   } finally {
     updatingId.value = null
   }
 }
 
 const removeFromCart = async (cartItemId: number) => {
-  if (!confirm('Are you sure you want to remove this item?')) return
+  const confirmed = await showConfirmDialog({
+    title: 'Remove Item?',
+    text: 'Are you sure you want to remove this item from your cart?',
+    icon: 'question',
+    confirmText: 'Yes, remove it'
+  })
+  
+  if (!confirmed) return
 
   try {
     deletingId.value = cartItemId
     const result = await cartStore.removeItem(cartItemId)
     if (!result.success) {
-      alert(`Error: ${result.error || 'Failed to remove item'}`)
+      await showErrorAlert(result.error || 'Failed to remove item')
     }
   } catch (err) {
-    alert('Failed to remove item')
+    await showErrorAlert('Failed to remove item')
   } finally {
     deletingId.value = null
   }

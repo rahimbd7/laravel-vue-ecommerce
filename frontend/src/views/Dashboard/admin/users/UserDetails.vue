@@ -129,7 +129,7 @@
               </div>
               <div class="bg-gray-50 rounded-lg p-3 text-center">
                 <p class="text-xs text-gray-500">Total Spent</p>
-                <p class="text-lg font-bold text-[#00685F]">${{ stats.total_spent?.toFixed(2) || '0.00' }}</p>
+                <p class="text-lg font-bold text-[#00685F]">${{ formatPrice(stats.total_spent) }}</p>
               </div>
               <div class="bg-gray-50 rounded-lg p-3 text-center">
                 <p class="text-xs text-gray-500">Reviews</p>
@@ -183,7 +183,7 @@
                       size="small"
                     />
                     <span class="text-sm font-bold text-[#00685F]">
-                      ${{ order.grand_total?.toFixed(2) || '0.00' }}
+                      ${{ formatPrice(order.grand_total) }}
                     </span>
                     <Button 
                       icon="pi pi-eye" 
@@ -462,13 +462,39 @@ const statusOptions = [
   { label: 'Suspended', value: 'suspended' },
 ]
 
+// ===================== HELPER FUNCTIONS =====================
+
+// ✅ Safe price formatting - handles string, number, null, undefined
+const formatPrice = (value: any): string => {
+  if (value === null || value === undefined) return '0.00'
+  const num = typeof value === 'string' ? parseFloat(value) : value
+  if (isNaN(num)) return '0.00'
+  return num.toFixed(2)
+}
+
+// ✅ Safe number formatting
+const formatNumber = (value: any): number => {
+  if (value === null || value === undefined) return 0
+  const num = typeof value === 'string' ? parseInt(value) : value
+  return isNaN(num) ? 0 : num
+}
+
 // Methods
 const fetchUserDetails = async () => {
   loading.value = true
   try {
-    const response = await adminApi.getUsersList({ per_page: 100 })
-    const foundUser = response.data.data?.find((u: any) => u.id === parseInt(userId))
-    user.value = foundUser || null
+    // Try direct user fetch first
+    let userData = null
+    try {
+      const response = await adminApi.getUser(userId)
+      userData = response.data.data
+    } catch {
+      // Fallback to list search
+      const response = await adminApi.getUsersList({ per_page: 100 })
+      userData = response.data.data?.find((u: any) => u.id === parseInt(userId) || u.uuid === userId)
+    }
+    
+    user.value = userData || null
     
     if (user.value) {
       form.name = user.value.name || ''
@@ -481,7 +507,12 @@ const fetchUserDetails = async () => {
     // Fetch stats from API
     try {
       const statsResponse = await adminApi.getUserStats(userId)
-      stats.value = statsResponse.data.data || stats.value
+      stats.value = {
+        total_orders: formatNumber(statsResponse.data.data?.total_orders),
+        total_spent: statsResponse.data.data?.total_spent || 0,
+        total_reviews: formatNumber(statsResponse.data.data?.total_reviews),
+        wishlist_count: formatNumber(statsResponse.data.data?.wishlist_count),
+      }
     } catch (error) {
       console.log('Stats not available yet')
     }
@@ -650,7 +681,7 @@ const goBack = () => {
 }
 
 const viewAllOrders = () => {
-  router.push(`/dashboard/admin/orders?user_id=${userId}`)
+  router.push(`/dashboard/admin/users/${userId}/orders`)
 }
 
 const viewOrder = (orderId: number) => {

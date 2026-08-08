@@ -60,6 +60,7 @@
           <div class="bg-white rounded-lg shadow-sm p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Shipping Address</h2>
             <div class="space-y-4">
+              <!-- ... existing form fields ... -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
@@ -115,15 +116,17 @@
               </label>
             </div>
           </div>
+
           <label class="flex items-center cursor-pointer mt-4">
-  <input v-model="form.save_address" type="checkbox" class="w-4 h-4 text-[#00685F] border-gray-300 rounded focus:ring-[#00685F]" />
-  <span class="ml-2 text-sm text-gray-700">Save this address to my profile for future orders</span>
-</label>
+            <input v-model="form.save_address" type="checkbox" class="w-4 h-4 text-[#00685F] border-gray-300 rounded focus:ring-[#00685F]" />
+            <span class="ml-2 text-sm text-gray-700">Save this address to my profile for future orders</span>
+          </label>
 
           <!-- Billing Address -->
           <div v-if="!form.use_same_address" class="bg-white rounded-lg shadow-sm p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Billing Address</h2>
             <div class="space-y-4">
+              <!-- ... existing billing address fields ... -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Street Address *</label>
                 <input v-model="form.billing_address" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#00685F]" placeholder="123 Main Street" />
@@ -135,6 +138,79 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">ZIP Code *</label><input v-model="form.billing_postal_code" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#00685F]" placeholder="10001" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Country *</label><select v-model="form.billing_country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#00685F]"><option value="">Select Country</option><option value="US">United States</option><option value="CA">Canada</option><option value="GB">United Kingdom</option><option value="AU">Australia</option></select></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ✅ Multiple Coupon Section -->
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Coupon Code</h2>
+            
+            <!-- Applied Coupons List -->
+            <div v-if="appliedCoupons.length > 0" class="mb-3 space-y-2">
+              <div 
+                v-for="(coupon, index) in appliedCoupons" 
+                :key="index"
+                class="p-3 bg-green-50 border border-green-200 rounded-lg"
+              >
+                <div class="flex justify-between items-center">
+                  <div>
+                    <p class="text-sm font-medium text-green-800">
+                      <i class="pi pi-check-circle mr-1"></i> Coupon Applied!
+                    </p>
+                    <p class="text-xs text-green-600">Code: {{ coupon.code }}</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-sm font-bold text-green-700">
+                      -{{ formatPrice(coupon.discount) }}
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  @click="removeCoupon(coupon.code)"
+                  class="mt-1 text-xs text-red-600 hover:text-red-800 font-medium"
+                >
+                  <i class="pi pi-times mr-1"></i> Remove
+                </button>
+              </div>
+              
+              <p class="text-xs text-gray-500 mt-2">
+                <i class="pi pi-info-circle mr-1"></i> 
+                Multiple coupons can be applied. Maximum 3 coupons per order.
+              </p>
+            </div>
+
+            <!-- Coupon Input -->
+            <div>
+              <div class="flex gap-2">
+                <input 
+                  v-model="couponCode" 
+                  type="text" 
+                  placeholder="Enter coupon code"
+                  class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#00685F]"
+                  :disabled="couponLimitReached"
+                  @keyup.enter="applyCoupon"
+                />
+                <button 
+                  @click="applyCoupon" 
+                  :disabled="validatingCoupon || couponLimitReached"
+                  class="px-6 py-2 bg-[#00685F] text-white rounded-lg hover:bg-[#004F45] disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  <span v-if="validatingCoupon" class="flex items-center gap-2">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Validating...
+                  </span>
+                  <span v-else>Apply</span>
+                </button>
+              </div>
+              
+              <div v-if="couponMessage" class="mt-2 text-sm" :class="couponMessageClass">
+                {{ couponMessage }}
+              </div>
+              
+              <div v-if="couponLimitReached" class="mt-2 text-xs text-yellow-600">
+                <i class="pi pi-exclamation-triangle mr-1"></i>
+                Maximum 3 coupons reached. Remove a coupon to apply another.
               </div>
             </div>
           </div>
@@ -223,8 +299,12 @@
             <div class="border-t border-gray-200 pt-4 space-y-2">
               <div class="flex justify-between text-sm text-gray-600"><span>Subtotal:</span><span>{{ formatPrice(subtotal) }}</span></div>
               <div class="flex justify-between text-sm text-gray-600"><span>Shipping:</span><span>{{ getShippingCost() }}</span></div>
-              <div class="flex justify-between text-sm text-gray-600"><span>Tax (10%):</span><span>{{ formatPrice(subtotal * 0.1) }}</span></div>
-              <div v-if="discountTotal > 0" class="flex justify-between text-sm text-red-600"><span>Discount:</span><span>-{{ formatPrice(discountTotal) }}</span></div>
+              <div class="flex justify-between text-sm text-gray-600"><span>Tax (10%):</span><span>{{ formatPrice(taxAmount) }}</span></div>
+              <!-- ✅ Coupon Discount Display -->
+              <div v-if="totalDiscount > 0" class="flex justify-between text-sm text-red-600 font-medium">
+                <span>Coupon Discount ({{ appliedCoupons.length }}):</span>
+                <span>-{{ formatPrice(totalDiscount) }}</span>
+              </div>
             </div>
 
             <div class="border-t border-gray-200 pt-4 flex justify-between text-lg font-bold">
@@ -259,11 +339,30 @@ const cartStore = useCartStore()
 const authStore = useAuthStore()
 
 const loading = ref(false)
-const profileData =ref<any>(null)
+const validatingCoupon = ref(false)
+const profileData = ref<any>(null)
 
-// ✅ Safe computed values to prevent NaN
+// ✅ Multiple Coupon State
+const couponCode = ref('')
+const appliedCoupons = ref<any[]>([])
+const couponMessage = ref('')
+const couponMessageClass = ref('')
+const MAX_COUPONS = 3
+
+// ✅ Computed values - THESE UPDATE THE ORDER SUMMARY
 const subtotal = computed(() => Number(cartStore.subtotal) || 0)
-const discountTotal = computed(() => Number(cartStore.discountTotal) || 0)
+
+// ✅ Total discount from all applied coupons
+const totalDiscount = computed(() => {
+  return appliedCoupons.value.reduce((sum, c) => sum + (c.discount || 0), 0)
+})
+
+const taxAmount = computed(() => {
+  const subtotalAfterDiscount = subtotal.value - totalDiscount.value
+  return subtotalAfterDiscount * 0.1
+})
+
+const couponLimitReached = computed(() => appliedCoupons.value.length >= MAX_COUPONS)
 
 const form = reactive({
   customer_name: '',
@@ -288,26 +387,18 @@ const form = reactive({
   card_cvv: '',
   card_name: '',
   terms_agreed: false,
-  save_address: false, 
+  save_address: false,
 })
-//load profile data
+
+// Load profile data
 const loadProfileData = async () => {
   try {
     const response = await api.get('/me')
     const data = response.data.data
-    
-    console.log('✅ Full user data from API:', data)
-    
-    // ✅ Profile is nested inside the user data
     profileData.value = data.profile
-    
-    console.log('✅ Profile data loaded:', profileData.value)
-    
-    // ✅ Pre-fill form with user data
     form.customer_name = data.name || ''
     form.customer_email = data.email || ''
     
-    // ✅ Pre-fill form with profile data
     if (profileData.value) {
       form.customer_phone = profileData.value.phone || ''
       form.shipping_address = profileData.value.address || ''
@@ -315,22 +406,11 @@ const loadProfileData = async () => {
       form.shipping_state = profileData.value.state || ''
       form.shipping_postal_code = profileData.value.postal_code || ''
       form.shipping_country = profileData.value.country || ''
-      
-      console.log('✅ Form filled with profile data:', {
-        address: form.shipping_address,
-        city: form.shipping_city,
-        state: form.shipping_state,
-        postal_code: form.shipping_postal_code,
-        country: form.shipping_country,
-      })
-    } else {
-      console.warn('⚠️ No profile data found')
     }
   } catch (error) {
     console.error('❌ Failed to load profile:', error)
   }
 }
-
 
 const copyShippingToBilling = () => {
   if (form.use_same_address) {
@@ -347,6 +427,122 @@ watch([() => form.shipping_address, () => form.shipping_city, () => form.shippin
   if (form.use_same_address) copyShippingToBilling()
 })
 
+// ✅ Fetch applied coupons
+const fetchAppliedCoupons = async () => {
+  try {
+    const response = await api.get('/coupons/applied')
+    if (response.data.status === 'success') {
+      appliedCoupons.value = response.data.data || []
+      // Update cart store discount total
+      const total = appliedCoupons.value.reduce((sum, c) => sum + (c.discount || 0), 0)
+      cartStore.discountTotal = total
+    }
+  } catch (error) {
+    console.error('Failed to fetch applied coupons:', error)
+    // Fallback: check if cart has coupon
+    if (cartStore.couponCode) {
+      appliedCoupons.value = [{
+        code: cartStore.couponCode,
+        discount: cartStore.couponDiscount || 0
+      }]
+    }
+  }
+}
+
+// ✅ Apply coupon
+const applyCoupon = async () => {
+  if (!couponCode.value.trim()) {
+    couponMessage.value = 'Please enter a coupon code'
+    couponMessageClass.value = 'text-yellow-600'
+    return
+  }
+
+  if (couponLimitReached.value) {
+    couponMessage.value = `Maximum ${MAX_COUPONS} coupons allowed per order`
+    couponMessageClass.value = 'text-yellow-600'
+    return
+  }
+
+  validatingCoupon.value = true
+  couponMessage.value = ''
+
+  try {
+    const response = await api.post('/coupons/apply', {
+      code: couponCode.value
+    })
+
+    if (response.data.status === 'success') {
+      const data = response.data.data
+      
+      // ✅ Update applied coupons
+      appliedCoupons.value = data.applied_coupons || []
+      
+      // ✅ Update cart store
+      const total = appliedCoupons.value.reduce((sum, c) => sum + (c.discount || 0), 0)
+      cartStore.discountTotal = total
+      
+      couponMessage.value = 'Coupon applied successfully!'
+      couponMessageClass.value = 'text-green-600'
+      
+      couponCode.value = ''
+      
+      await Swal.fire({
+        icon: 'success',
+        title: 'Coupon Applied!',
+        text: `You saved ${formatPrice(total)}`,
+        confirmButtonColor: '#00685F',
+        timer: 2000,
+        timerProgressBar: true
+      })
+    }
+  } catch (error: any) {
+    let message = error.response?.data?.message || 'Invalid coupon code'
+    couponMessage.value = message
+    couponMessageClass.value = 'text-red-600'
+    
+    await Swal.fire({
+      icon: 'error',
+      title: 'Invalid Coupon',
+      text: message,
+      confirmButtonColor: '#00685F'
+    })
+  } finally {
+    validatingCoupon.value = false
+  }
+}
+
+// ✅ Remove a specific coupon
+const removeCoupon = async (code: string) => {
+  try {
+    const response = await api.delete('/coupons/remove', { 
+      data: { code: code }
+    })
+    
+    if (response.data.status === 'success') {
+      await fetchAppliedCoupons()
+      
+      couponMessage.value = 'Coupon removed'
+      couponMessageClass.value = 'text-gray-600'
+      
+      await Swal.fire({
+        icon: 'info',
+        title: 'Coupon Removed',
+        text: 'Coupon has been removed successfully.',
+        confirmButtonColor: '#00685F',
+        timer: 1500,
+        timerProgressBar: true
+      })
+    }
+  } catch (error) {
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Failed to remove coupon',
+      confirmButtonColor: '#00685F'
+    })
+  }
+}
+
 const getShippingCost = (): string => {
   let cost = 5.99
   if (form.shipping_method === 'express') cost = 15.00
@@ -360,7 +556,9 @@ const getTotalPrice = (): number => {
   if (form.shipping_method === 'express') shippingCost = 15.00
   else if (form.shipping_method === 'overnight') shippingCost = 25.00
   else if (form.shipping_method === 'standard' && subtotal.value >= 100) shippingCost = 0
-  return (subtotal.value || 0) + (subtotal.value * 0.1) + shippingCost - (discountTotal.value || 0)
+  
+  const subtotalAfterDiscount = subtotal.value - totalDiscount.value
+  return subtotalAfterDiscount + (subtotalAfterDiscount * 0.1) + shippingCost
 }
 
 const formatPrice = (price: number): string => {
@@ -369,25 +567,32 @@ const formatPrice = (price: number): string => {
 }
 
 const placeOrder = async () => {
-  if (!form.customer_name) { await Swal.fire({ icon: 'error', title: 'Missing Name', text: 'Please enter your full name', confirmButtonColor: '#00685F' }); return }
-  if (!form.customer_email) { await Swal.fire({ icon: 'error', title: 'Missing Email', text: 'Please enter your email address', confirmButtonColor: '#00685F' }); return }
-  if (!form.shipping_address || !form.shipping_city || !form.shipping_country) { await Swal.fire({ icon: 'error', title: 'Missing Address', text: 'Please enter complete shipping address', confirmButtonColor: '#00685F' }); return }
-  if (!form.terms_agreed) { await Swal.fire({ icon: 'error', title: 'Terms Required', text: 'Please agree to terms and conditions', confirmButtonColor: '#00685F' }); return }
-  if (!authStore.isAuthenticated) { await Swal.fire({ icon: 'error', title: 'Login Required', text: 'Please login to place order', confirmButtonColor: '#00685F' }); router.push('/login'); return }
+  if (!form.customer_name) {
+    await Swal.fire({ icon: 'error', title: 'Missing Name', text: 'Please enter your full name', confirmButtonColor: '#00685F' })
+    return
+  }
+  if (!form.customer_email) {
+    await Swal.fire({ icon: 'error', title: 'Missing Email', text: 'Please enter your email address', confirmButtonColor: '#00685F' })
+    return
+  }
+  if (!form.shipping_address || !form.shipping_city || !form.shipping_country) {
+    await Swal.fire({ icon: 'error', title: 'Missing Address', text: 'Please enter complete shipping address', confirmButtonColor: '#00685F' })
+    return
+  }
+  if (!form.terms_agreed) {
+    await Swal.fire({ icon: 'error', title: 'Terms Required', text: 'Please agree to terms and conditions', confirmButtonColor: '#00685F' })
+    return
+  }
+  if (!authStore.isAuthenticated) {
+    await Swal.fire({ icon: 'error', title: 'Login Required', text: 'Please login to place order', confirmButtonColor: '#00685F' })
+    router.push('/login')
+    return
+  }
 
   loading.value = true
 
   try {
-    const profileData = {
-      phone: form.customer_phone,
-      address: form.shipping_address,
-      city: form.shipping_city,
-      state: form.shipping_state,
-      postal_code: form.shipping_postal_code,
-      country: form.shipping_country
-    }
-    console.log('Profile Data:', profileData)
-    const response = await api.post('/checkout/process', {
+    const payload: any = {
       customer_name: form.customer_name,
       customer_email: form.customer_email,
       customer_phone: form.customer_phone,
@@ -405,29 +610,65 @@ const placeOrder = async () => {
       shipping_method: form.shipping_method,
       payment_method: form.payment_method,
       save_address: form.save_address,
-      notes: form.notes
-    })
+      notes: form.notes,
+      // ✅ Send all coupon codes
+      coupon_codes: appliedCoupons.value.map(c => c.code),
+    }
+
+    const response = await api.post('/checkout/process', payload)
+    
     if (response.data.status === 'success') {
-      await Swal.fire({ icon: 'success', title: 'Order Placed!', text: 'Your order has been placed successfully', confirmButtonColor: '#00685F' })
+      await Swal.fire({
+        icon: 'success',
+        title: 'Order Placed!',
+        text: response.data.message || 'Your order has been placed successfully',
+        confirmButtonColor: '#00685F'
+      })
+      
+      appliedCoupons.value = []
+      couponCode.value = ''
+      cartStore.discountTotal = 0
+      
       await cartStore.clear()
-      router.push(`/order/${response.data?.data?.order?.id}`)
+      router.push(`/dashboard/customer/order/${response.data?.data?.order?.id}`)
     } else {
-      await Swal.fire({ icon: 'error', title: 'Order Failed', text: response.data.message || 'Failed to place order', confirmButtonColor: '#00685F' })
+      await Swal.fire({
+        icon: 'error',
+        title: 'Order Failed',
+        text: response.data.message || 'Failed to place order',
+        confirmButtonColor: '#00685F'
+      })
     }
   } catch (err: any) {
     const errors = err.response?.data?.errors
     if (errors) {
-      await Swal.fire({ icon: 'error', title: 'Validation Error', text: Object.values(errors).flat().join('\n'), confirmButtonColor: '#00685F' })
+      await Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        text: Object.values(errors).flat().join('\n'),
+        confirmButtonColor: '#00685F'
+      })
     } else {
-      await Swal.fire({ icon: 'error', title: 'Error', text: err.response?.data?.message || 'Failed to place order', confirmButtonColor: '#00685F' })
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.response?.data?.message || 'Failed to place order',
+        confirmButtonColor: '#00685F'
+      })
     }
   } finally {
     loading.value = false
   }
 }
 
-onMounted(async () => {
+// ✅ Refresh all data
+const refreshData = async () => {
   await cartStore.fetchCart()
   await loadProfileData()
+  await fetchAppliedCoupons()
+}
+
+onMounted(() => {
+  refreshData()
 })
 </script>

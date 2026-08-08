@@ -39,8 +39,8 @@
           <!-- Main Image -->
           <div class="bg-white rounded-lg overflow-hidden shadow-sm">
             <img
-              v-if="product.media?.image"
-              :src="product.media.image"
+              v-if="getMainImage()"
+              :src="getMainImage()"
               :alt="product.name"
               class="w-full h-96 object-cover"
               @error="handleImageError"
@@ -53,17 +53,22 @@
           </div>
 
           <!-- Thumbnail Gallery -->
-          <div v-if="product.images && product.images.length > 0" class="flex gap-3 overflow-x-auto pb-2">
+          <div v-if="getProductImages().length > 0" class="flex gap-3 overflow-x-auto pb-2">
             <button
-              v-for="(image, index) in product.images"
-              :key="index"
+              v-for="(image, index) in getProductImages()"
+              :key="image?.id || index"
               @click="selectedImageIndex = index"
               :class="[
                 'shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition',
                 selectedImageIndex === index ? 'border-[#00685F]' : 'border-gray-200'
               ]"
             >
-              <img :src="image.thumbnail" :alt="`Product ${index + 1}`" class="w-full h-full object-cover" />
+              <img 
+                :src="getImageUrl(image, 'thumbnail')" 
+                :alt="`Product ${index + 1}`" 
+                class="w-full h-full object-cover"
+                @error="handleImageError"
+              />
             </button>
           </div>
         </div>
@@ -257,7 +262,126 @@ const quantity = ref(1)
 const selectedVariation = ref<number | string>('')
 const selectedImageIndex = ref(0)
 
-// Methods
+// ✅ Helper function to get image URL from various formats
+const getImageUrl = (image: any, size: 'original' | 'thumbnail' | 'medium' | 'large' = 'original'): string => {
+  if (!image) return ''
+  
+  // Try to get URL from different possible structures
+  // 1. Direct URL fields
+  if (size === 'thumbnail' && (image.thumbnail_url || image.thumbnail)) {
+    return image.thumbnail_url || image.thumbnail
+  }
+  if (size === 'medium' && (image.medium_url || image.medium)) {
+    return image.medium_url || image.medium
+  }
+  if (size === 'large' && (image.large_url || image.large)) {
+    return image.large_url || image.large
+  }
+  
+  // 2. Nested urls object (from ProductImageResource)
+  if (image.urls) {
+    if (size === 'thumbnail' && image.urls.thumbnail) {
+      return image.urls.thumbnail
+    }
+    if (size === 'medium' && image.urls.medium) {
+      return image.urls.medium
+    }
+    if (size === 'large' && image.urls.large) {
+      return image.urls.large
+    }
+    // Fallback to original
+    if (image.urls.original) {
+      return image.urls.original
+    }
+  }
+  
+  // 3. Top-level fields
+  if (image.image_url) return image.image_url
+  if (image.secure_url) return image.secure_url
+  if (image.url) return image.url
+  
+  // 4. Fallback to main product image
+  if (product.value?.media?.image) {
+    return product.value.media.image
+  }
+  
+  return ''
+}
+
+// ✅ Get product images array
+const getProductImages = () => {
+  if (!product.value) return []
+  
+  // Try to get images from media.images
+  if (product.value.media?.images && product.value.media.images.length > 0) {
+    return product.value.media.images
+  }
+  
+  // Fallback: create array from main image
+  if (product.value.media?.image) {
+    return [{
+      id: 'main',
+      image_url: product.value.media.image,
+      thumbnail_url: product.value.media.thumbnail || product.value.media.image,
+      urls: {
+        original: product.value.media.image,
+        thumbnail: product.value.media.thumbnail || product.value.media.image
+      }
+    }]
+  }
+  
+  return []
+}
+
+// ✅ Get main image URL
+const getMainImage = (): string => {
+  if (!product.value) return ''
+  
+  const images = getProductImages()
+  if (images.length > 0) {
+    const selectedIndex = Math.min(selectedImageIndex.value, images.length - 1)
+    const image = images[selectedIndex]
+    return getImageUrl(image, 'large') || getImageUrl(image, 'original')
+  }
+  
+  // Fallback to media.image
+  if (product.value.media?.image) {
+    return product.value.media.image
+  }
+  
+  return ''
+}
+
+// ✅ Check if an image is from Cloudinary
+const isCloudinaryImage = (url: string): boolean => {
+  if (!url) return false
+  return url.includes('cloudinary.com') || url.includes('res.cloudinary.com')
+}
+
+// ✅ Get optimized Cloudinary URL
+const getCloudinaryUrl = (url: string, width?: number, height?: number): string => {
+  if (!url) return ''
+  if (!isCloudinaryImage(url)) return url
+  
+  // If URL already has transformations, don't add more
+  if (url.includes('/upload/')) {
+    // Add transformations before the upload path
+    const parts = url.split('/upload/')
+    if (parts.length === 2) {
+      let transformations = ''
+      if (width && height) {
+        transformations = `c_fill,w_${width},h_${height}/`
+      } else if (width) {
+        transformations = `w_${width}/`
+      } else if (height) {
+        transformations = `h_${height}/`
+      }
+      return `${parts[0]}/upload/${transformations}${parts[1]}`
+    }
+  }
+  return url
+}
+
 const fetchProduct = async () => {
   try {
     loading.value = true
@@ -268,6 +392,7 @@ const fetchProduct = async () => {
     // Reset quantity and variations
     quantity.value = 1
     selectedVariation.value = ''
+    selectedImageIndex.value = 0
     
     // Fetch related products
     if (product.value?.id) {
@@ -294,15 +419,14 @@ const handleAddToCart = async () => {
     const result = await cartStore.addItem(product.value.id, quantity.value, variationId)
     
     if (result.success) {
-      // Show success message (you can replace this with a toast notification)
-     toast.success('Item added to cart')
+      toast.success('Item added to cart')
       quantity.value = 1
       selectedVariation.value = ''
     } else {
-      alert(`Error: ${result.error || 'Failed to add to cart'}`)
+      toast.error(result.error || 'Failed to add to cart')
     }
   } catch (err) {
-    alert('Failed to add to cart')
+    toast.error('Failed to add to cart')
   } finally {
     loading.value = false
   }
@@ -315,8 +439,15 @@ const formatPrice = (price: number): string => {
   }).format(price)
 }
 
-const handleImageError = () => {
-  // Handle image loading error
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  if (img) {
+    // Show fallback image with product name initials
+    const productName = product.value?.name || 'Product'
+    const initials = productName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    img.src = `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" font-size="40" text-anchor="middle" dy=".3em" fill="%239ca3af"%3E${initials}%3C/text%3E%3C/svg%3E`
+    img.onerror = null
+  }
 }
 
 const goToProduct = (slug: string) => {
