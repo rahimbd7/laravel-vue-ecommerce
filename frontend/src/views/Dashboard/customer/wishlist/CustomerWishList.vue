@@ -140,9 +140,9 @@ const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://loc
 
 // Get product image
 const getProductImage = (product: any) => {
-  if (product.image) {
-    return product.image.startsWith('http') 
-      ? product.image 
+  if (product?.image_url) {
+    return product.image_url.startsWith('http') 
+      ? product.image_url 
       : `${baseUrl}/storage/${product.image}`
   }
   return null

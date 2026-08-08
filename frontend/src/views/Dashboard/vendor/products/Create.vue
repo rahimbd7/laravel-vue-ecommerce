@@ -2,8 +2,20 @@
   <div class="space-y-4 sm:space-y-6">
     <!-- Page Header -->
     <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6">
-      <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Add New Product</h1>
-      <p class="text-sm sm:text-base text-gray-600">Create a new product listing</p>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Add New Product</h1>
+          <p class="text-sm sm:text-base text-gray-600">Create a new product listing</p>
+        </div>
+        <Button 
+          label="Fill Test Data" 
+          icon="pi pi-file" 
+          severity="secondary" 
+          outlined
+          class="text-sm"
+          @click="fillTestData"
+        />
+      </div>
     </div>
 
     <!-- Product Form -->
@@ -77,25 +89,139 @@
               class="w-full"
               :class="{ 'p-invalid': errors.compare_price }"
             />
-            <small v-if="errors.compare_price" class="text-red-500 text-xs sm:text-sm">{{ errors.compare_price }}</small>
           </div>
 
-          <!-- Category -->
+          <!-- Category with Collapsible Subcategories -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
               Category <span class="text-red-500">*</span>
             </label>
-            <Dropdown 
-              v-model="form.category_id" 
-              :options="categories" 
-              optionLabel="name"
-              optionValue="id"
-              placeholder="Select category" 
-              class="w-full"
-              :class="{ 'p-invalid': errors.category_id }"
-              filter
-            />
-            <small v-if="errors.category_id" class="text-red-500 text-xs sm:text-sm">{{ errors.category_id }}</small>
+            
+            <!-- Custom Category Dropdown -->
+            <div class="relative" ref="dropdownRef">
+              <!-- Dropdown Trigger -->
+              <div 
+                @click="toggleDropdown"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white cursor-pointer flex items-center justify-between hover:border-[#00685F] transition"
+                :class="{ 'border-[#00685F]': isDropdownOpen, 'p-invalid': errors.category_id }"
+              >
+                <span class="text-sm" :class="{ 'text-gray-500': !selectedCategory }">
+                  {{ selectedCategory ? selectedCategory.label : 'Select category' }}
+                </span>
+                <i class="pi" :class="isDropdownOpen ? 'pi-chevron-up' : 'pi-chevron-down'"></i>
+              </div>
+              
+              <small v-if="errors.category_id" class="text-red-500 text-xs sm:text-sm">{{ errors.category_id }}</small>
+              <small v-else class="text-gray-400 text-xs sm:text-sm">Select a category or subcategory</small>
+
+              <!-- Dropdown Menu -->
+              <div 
+                v-if="isDropdownOpen"
+                class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto"
+              >
+                <div class="p-2">
+                  <!-- Search Input -->
+                  <div class="relative mb-2">
+                    <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <InputText 
+                      v-model="searchQuery"
+                      placeholder="Search categories..." 
+                      class="w-full pl-8 text-sm"
+                      @input="filterCategories"
+                    />
+                  </div>
+
+                  <!-- Category Tree -->
+                  <div v-if="filteredTree.length > 0" class="space-y-0.5">
+                    <div 
+                      v-for="item in filteredTree" 
+                      :key="item.id"
+                      class="category-item"
+                    >
+                      <!-- Category Item -->
+                      <div class="flex items-center px-2 py-1.5 rounded hover:bg-gray-50 transition group">
+                        <!-- Expand/Collapse Button -->
+                        <button 
+                          v-if="item.hasChildren"
+                          type="button"
+                          @click.stop="toggleExpand(item.id)"
+                          class="p-0.5 hover:bg-gray-200 rounded transition mr-1"
+                        >
+                          <i 
+                            class="pi text-xs text-gray-500"
+                            :class="isExpanded(item.id) ? 'pi-chevron-down' : 'pi-chevron-right'"
+                          ></i>
+                        </button>
+                        <span v-else class="w-4 mr-1"></span>
+                        
+                        <!-- Category Name -->
+                        <div 
+                          @click="selectCategory(item)"
+                          class="flex items-center gap-2 flex-1 cursor-pointer"
+                        >
+                          <span 
+                            v-for="i in item.level" 
+                            :key="i" 
+                            class="inline-block w-4"
+                          ></span>
+                          <i v-if="item.icon" :class="item.icon" class="text-[#00685F] text-sm"></i>
+                          <span class="text-sm" :class="{ 'font-semibold text-[#00685F]': selectedCategory?.id === item.id }">
+                            {{ item.label }}
+                          </span>
+                          <!-- ✅ Show child count for parent categories -->
+          <span v-if="item.hasChildren" class="text-xs text-gray-400">
+            ({{ item.children.length }})
+          </span>
+          <!-- ✅ Show product count for leaf categories (optional) -->
+          <span v-else-if="item.product_count !== undefined && item.product_count > 0" class="text-xs text-gray-400">
+            ({{ item.product_count }} products)
+          </span>
+                        </div>
+                        
+                        <!-- Select Indicator -->
+                        <i 
+                          v-if="selectedCategory?.id === item.id"
+                          class="pi pi-check text-[#00685F] text-xs ml-auto"
+                        ></i>
+                      </div>
+
+                      <!-- Children (Subcategories) - Expandable -->
+                      <div 
+                        v-if="item.hasChildren && isExpanded(item.id)"
+                        class="ml-6 border-l-2 border-gray-100 pl-2 space-y-0.5"
+                      >
+                        <div 
+                          v-for="child in item.children" 
+                          :key="child.id"
+                          @click="selectCategory(child)"
+                          class="flex items-center px-2 py-1.5 rounded cursor-pointer hover:bg-gray-50 transition ml-4"
+                          :class="{ 'bg-[#00685F]/10 text-[#00685F]': selectedCategory?.id === child.id }"
+                        >
+                          <div class="flex items-center gap-2 flex-1">
+                            <span class="inline-block w-4"></span>
+                            <i v-if="child.icon" :class="child.icon" class="text-[#00685F] text-sm"></i>
+                            <span class="text-sm">{{ child.label }}</span>
+                            <span v-if="child.product_count !== undefined" class="text-xs text-gray-400">
+                              ({{ child.product_count }})
+                            </span>
+                          </div>
+                          <i 
+                            v-if="selectedCategory?.id === child.id"
+                            class="pi pi-check text-[#00685F] text-xs"
+                          ></i>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- No Results -->
+                  <div v-else class="text-center py-4 text-gray-500 text-sm">
+                    <i class="pi pi-inbox text-2xl block mb-2 text-gray-300"></i>
+                    No categories found
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Status -->
@@ -140,7 +266,6 @@
               class="w-full"
               :class="{ 'p-invalid': errors.stock_status }"
             />
-            <small v-if="errors.stock_status" class="text-red-500 text-xs sm:text-sm">{{ errors.stock_status }}</small>
           </div>
 
           <!-- SKU -->
@@ -148,9 +273,10 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">SKU</label>
             <InputText 
               v-model="form.sku" 
-              placeholder="Enter SKU" 
+              placeholder="Enter SKU (leave empty to auto-generate)" 
               class="w-full text-sm sm:text-base"
             />
+            <small class="text-gray-400 text-xs sm:text-sm">Leave empty to auto-generate</small>
           </div>
 
           <!-- Weight -->
@@ -209,14 +335,16 @@
                   placeholder="comma, separated, keywords" 
                   class="w-full text-sm sm:text-base"
                 />
-                <small class="text-gray-400 text-xs sm:text-sm">Separate keywords with commas. Leave empty to auto-generate</small>
               </div>
             </div>
           </div>
 
           <!-- Images -->
           <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Product Images <span class="text-red-500">*</span>
+            </label>
+
             <FileUpload 
               name="images[]" 
               :customUpload="true"
@@ -224,20 +352,24 @@
               @remove="onFileRemove"
               multiple
               accept="image/*"
-              :maxFileSize="2097152"
+              :maxFileSize="5242880"
               class="w-full"
+              :disabled="submitting"
             >
               <template #empty>
                 <p class="text-gray-500 text-sm">Drag and drop images here or click to browse</p>
               </template>
             </FileUpload>
-            <small class="text-gray-400 text-xs sm:text-sm">Maximum file size: 2MB per image</small>
+            <small class="text-gray-400 text-xs sm:text-sm">Maximum file size: 5MB per image. Images will be uploaded when you save the product.</small>
             
-            <!-- Image Preview -->
-            <div v-if="form.images && form.images.length > 0" class="flex flex-wrap gap-2 mt-3 sm:mt-4">
-              <div v-for="(image, index) in form.images" :key="index" class="relative w-16 h-16 sm:w-20 sm:h-20 border rounded overflow-hidden">
+            <div v-if="form.images.length > 0" class="flex flex-wrap gap-2 mt-3 sm:mt-4">
+              <div 
+                v-for="(file, index) in form.images" 
+                :key="'local-' + index" 
+                class="relative w-16 h-16 sm:w-20 sm:h-20 border rounded overflow-hidden"
+              >
                 <img 
-                  :src="getImagePreviewUrl(image)" 
+                  :src="getImagePreviewUrl(file)" 
                   class="w-full h-full object-cover" 
                   alt="Product image" 
                 />
@@ -248,7 +380,31 @@
                 >
                   ×
                 </button>
+                <div v-if="index === 0" class="absolute bottom-0 left-0 right-0 bg-[#00685F] text-white text-[8px] text-center py-0.5">
+                  Primary
+                </div>
               </div>
+            </div>
+            
+            <small v-if="form.images.length === 0" class="text-red-500 text-xs sm:text-sm block mt-1">
+              Please select at least one product image
+            </small>
+          </div>
+        </div>
+
+        <!-- Upload Progress -->
+        <div v-if="uploading" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div class="flex items-center gap-3">
+            <i class="pi pi-spin pi-spinner text-2xl text-[#00685F]"></i>
+            <div class="flex-1">
+              <p class="text-sm font-medium text-blue-700">Uploading images to Cloudinary...</p>
+              <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                <div 
+                  class="bg-[#00685F] h-2 rounded-full transition-all duration-300"
+                  :style="{ width: uploadProgress + '%' }"
+                ></div>
+              </div>
+              <p class="text-xs text-blue-600 mt-1">{{ uploadProgress }}% complete</p>
             </div>
           </div>
         </div>
@@ -271,11 +427,13 @@
         </div>
       </form>
     </div>
+
+    <Toast />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import InputText from 'primevue/inputtext'
@@ -284,8 +442,18 @@ import Dropdown from 'primevue/dropdown'
 import Textarea from 'primevue/textarea'
 import FileUpload from 'primevue/fileupload'
 import Button from 'primevue/button'
+import Toast from 'primevue/toast'
 import api from '@/api/api'
 import { useVendorDashboardStore } from '@/stores/DashboardStore/Vendor/dashboard.vendor.store'
+
+interface UploadedImage {
+  secure_url: string
+  public_id: string
+  is_primary: boolean
+  thumbnail?: string
+  medium?: string
+  large?: string
+}
 
 interface FormData {
   name: string
@@ -308,18 +476,34 @@ interface FormData {
   images: File[]
 }
 
-interface Category {
+interface CategoryNode {
   id: number
   name: string
+  label: string
+  level: number
+  icon?: string
+  hasChildren: boolean
+  children: CategoryNode[]
+  product_count?: number
 }
 
 const router = useRouter()
 const toast = useToast()
 const dashboardStore = useVendorDashboardStore()
 
+// State
 const submitting = ref(false)
-const categories = ref<Category[]>([])
+const uploading = ref(false)
+const uploadProgress = ref(0)
+const categories = ref<CategoryNode[]>([])
 const errors = ref<Record<string, string[]>>({})
+
+// Dropdown State
+const isDropdownOpen = ref(false)
+const searchQuery = ref('')
+const expandedNodes = ref<number[]>([])
+const selectedCategory = ref<{ id: number; label: string } | null>(null)
+const dropdownRef = ref<HTMLElement | null>(null)
 
 const statusOptions = [
   { label: 'Active', value: 'active' },
@@ -355,6 +539,48 @@ const form = ref<FormData>({
   images: []
 })
 
+// Computed
+const filteredTree = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return categories.value
+  }
+  
+  const query = searchQuery.value.toLowerCase().trim()
+  const filterNodes = (nodes: CategoryNode[]): CategoryNode[] => {
+    return nodes
+      .map(node => {
+        const matches = node.label.toLowerCase().includes(query)
+        const filteredChildren = filterNodes(node.children || [])
+        
+        if (matches || filteredChildren.length > 0) {
+          return {
+            ...node,
+            children: filteredChildren,
+          }
+        }
+        return null
+      })
+      .filter(Boolean) as CategoryNode[]
+  }
+  
+  // Auto-expand when searching
+  if (searchQuery.value.trim()) {
+    const allExpanded: number[] = []
+    const collectIds = (nodes: CategoryNode[]) => {
+      for (const node of nodes) {
+        if (node.hasChildren) {
+          allExpanded.push(node.id)
+          collectIds(node.children)
+        }
+      }
+    }
+    collectIds(filterNodes(categories.value))
+    expandedNodes.value = allExpanded
+  }
+  
+  return filterNodes(categories.value)
+})
+
 const getImagePreviewUrl = (file: File): string => {
   return URL.createObjectURL(file)
 }
@@ -370,12 +596,121 @@ const updateStockStatus = () => {
   }
 }
 
+// Category Helpers
+const buildCategoryTree = (cats: any[], level: number = 0): CategoryNode[] => {
+  return cats.map(cat => ({
+    id: cat.id,
+    name: cat.name,
+    label: cat.name,
+    level: level,
+    icon: cat.icon || undefined,
+    hasChildren: cat.children && cat.children.length > 0,
+    children: cat.children && cat.children.length > 0 
+      ? buildCategoryTree(cat.children, level + 1)
+      : [],
+    product_count: cat.product_count || 0
+  }))
+}
+
 const fetchCategories = async () => {
   try {
     const response = await api.get('/categories')
-    categories.value = response.data.data
+    const rawData = response.data.data
+    categories.value = buildCategoryTree(rawData)
+    console.log('Category tree:', categories.value)
   } catch (error) {
     console.error('Failed to fetch categories:', error)
+  }
+}
+
+// Dropdown Methods
+const toggleDropdown = () => {
+  isDropdownOpen.value = !isDropdownOpen.value
+  if (isDropdownOpen.value) {
+    searchQuery.value = ''
+  }
+}
+
+const selectCategory = (category: CategoryNode) => {
+  selectedCategory.value = {
+    id: category.id,
+    label: category.label
+  }
+  form.value.category_id = category.id
+  isDropdownOpen.value = false
+  searchQuery.value = ''
+}
+
+// ✅ Toggle expand/collapse
+const toggleExpand = (id: number) => {
+  const index = expandedNodes.value.indexOf(id)
+  if (index > -1) {
+    expandedNodes.value.splice(index, 1)
+  } else {
+    expandedNodes.value.push(id)
+  }
+  // Force reactivity
+  expandedNodes.value = [...expandedNodes.value]
+  console.log('Expanded nodes:', expandedNodes.value)
+}
+
+const isExpanded = (id: number): boolean => {
+  return expandedNodes.value.includes(id)
+}
+
+const filterCategories = () => {
+  // The filtering is handled by the computed property
+}
+
+// Close dropdown when clicking outside
+const handleClickOutside = (event: MouseEvent) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
+    isDropdownOpen.value = false
+  }
+}
+
+// Upload methods
+const uploadToCloudinary = async (file: File): Promise<UploadedImage | null> => {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'your-cloud-name'
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_PRODUCT_PRESET || 'product_preset'
+  
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('upload_preset', uploadPreset)
+  formData.append('folder', 'products')
+
+  try {
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      {
+        method: 'POST',
+        body: formData,
+      }
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error?.message || 'Upload failed')
+    }
+
+    const result = await response.json()
+    
+    return {
+      secure_url: result.secure_url,
+      public_id: result.public_id,
+      is_primary: false,
+      thumbnail: result.secure_url,
+      medium: result.secure_url,
+      large: result.secure_url,
+    }
+  } catch (error: any) {
+    toast.add({
+      severity: 'error',
+      summary: 'Upload Failed',
+      detail: error.message || 'Failed to upload image to Cloudinary',
+      life: 5000
+    })
+    return null
   }
 }
 
@@ -383,6 +718,12 @@ const onFileSelect = (event: any) => {
   const files = event.files
   if (files && files.length > 0) {
     form.value.images = [...form.value.images, ...files]
+    toast.add({
+      severity: 'info',
+      summary: 'Files Selected',
+      detail: `${files.length} image(s) selected. They will be uploaded when you save the product.`,
+      life: 3000
+    })
   }
 }
 
@@ -395,58 +736,105 @@ const removeImage = (index: number) => {
 }
 
 const submitProduct = async () => {
-  submitting.value = true
   errors.value = {}
+  
+  // Validate required fields
+  if (!form.value.name) {
+    errors.value = { name: ['Product name is required'] }
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Product name is required',
+      life: 3000
+    })
+    return
+  }
+
+  if (!form.value.price || form.value.price <= 0) {
+    errors.value = { price: ['Price must be greater than 0'] }
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Price must be greater than 0',
+      life: 3000
+    })
+    return
+  }
+
+  if (!form.value.category_id) {
+    errors.value = { category_id: ['Category is required'] }
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Please select a category',
+      life: 3000
+    })
+    return
+  }
+
+  if (form.value.images.length === 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'No Images',
+      detail: 'Please select at least one product image',
+      life: 3000
+    })
+    return
+  }
+
+  submitting.value = true
+  uploading.value = true
+  uploadProgress.value = 0
 
   try {
-    const formData = new FormData()
-    
-    // Basic fields
-    formData.append('name', form.value.name || '')
-    formData.append('description', form.value.description || '')
-    formData.append('short_description', form.value.short_description || '')
-    formData.append('price', String(form.value.price ?? 0))
-    formData.append('category_id', String(form.value.category_id ?? ''))
-    formData.append('status', form.value.status || 'active')
-    formData.append('stock_quantity', String(form.value.stock_quantity ?? 0))
-    formData.append('stock_status', form.value.stock_status || 'out_of_stock')
-    formData.append('sku', form.value.sku || '')
-    
-    if (form.value.weight !== null) {
-      formData.append('weight', String(form.value.weight))
-    }
-    
-    if (form.value.compare_price !== null && form.value.compare_price !== undefined) {
-      formData.append('compare_price', String(form.value.compare_price))
-    }
-    
-    // Dimensions
-    const dimensions = [
-      form.value.dimensions_length,
-      form.value.dimensions_width,
-      form.value.dimensions_height
-    ]
-    if (dimensions.every(d => d !== null && d !== undefined)) {
-      formData.append('dimensions', dimensions.join(' x '))
-    }
+    const uploadedImagesList: UploadedImage[] = []
+    const totalFiles = form.value.images.length
 
-    // Meta fields
-    formData.append('meta_title', form.value.meta_title || '')
-    formData.append('meta_description', form.value.meta_description || '')
-    formData.append('meta_keywords', form.value.meta_keywords || '')
-
-    // Images
-    form.value.images.forEach((file) => {
-      formData.append('images[]', file)
-    })
-
-    console.log('📤 Submitting product with:', Object.fromEntries(formData))
-    
-    const response = await api.post('/v1/products', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+    for (let i = 0; i < form.value.images.length; i++) {
+      const file = form.value.images[i]
+      const result = await uploadToCloudinary(file as File)
+      if (result) {
+        result.is_primary = i === 0
+        uploadedImagesList.push(result)
       }
-    })
+      uploadProgress.value = Math.round(((i + 1) / totalFiles) * 100)
+    }
+
+    uploading.value = false
+
+    const payload = {
+      name: form.value.name || '',
+      description: form.value.description || '',
+      short_description: form.value.short_description || '',
+      price: form.value.price ?? 0,
+      compare_price: form.value.compare_price ?? 0,
+      category_id: form.value.category_id ?? null,
+      status: form.value.status || 'active',
+      stock_quantity: form.value.stock_quantity ?? 0,
+      stock_status: form.value.stock_status || 'out_of_stock',
+      sku: form.value.sku || '',
+      weight: form.value.weight ?? 0,
+      dimensions: [
+        form.value.dimensions_length,
+        form.value.dimensions_width,
+        form.value.dimensions_height
+      ].filter(d => d !== null && d !== undefined).join(' x ') || null,
+      meta_title: form.value.meta_title || '',
+      meta_description: form.value.meta_description || '',
+      meta_keywords: form.value.meta_keywords || '',
+      images: uploadedImagesList.map((img) => ({
+        secure_url: img.secure_url,
+        public_id: img.public_id,
+        is_primary: img.is_primary,
+        thumbnail: img.thumbnail || img.secure_url,
+        medium: img.medium || img.secure_url,
+        large: img.large || img.secure_url
+      }))
+    }
+
+    console.log('📤 Submitting product:', payload)
+
+    const response = await api.post('/v1/products', payload)
 
     if (response.data.status === 'success' || response.data.success) {
       toast.add({
@@ -483,6 +871,8 @@ const submitProduct = async () => {
     }
   } finally {
     submitting.value = false
+    uploading.value = false
+    uploadProgress.value = 0
   }
 }
 
@@ -496,41 +886,70 @@ const fillTestData = () => {
     })
     return
   }
- const timestamp = Date.now().toString().slice(-6);
-  const sku = `SKU-HEAD-${timestamp}`;
-  form.value = {
-    name: 'Premium Wireless Headphones',
-    description: 'High-quality wireless headphones with noise cancellation, 40-hour battery life, and premium sound quality.',
-    short_description: 'Premium wireless headphones with noise cancellation and 40-hour battery.',
-    price: 149.99,
-    compare_price: 199.99,
-    category_id: categories.value[0]?.id || null,
-    status: 'active',
-    stock_quantity: 50,
-    stock_status: 'in_stock',
-    sku: sku,
-    weight: 0.45,
-    dimensions_length: 20,
-    dimensions_width: 15,
-    dimensions_height: 8,
-    meta_title: '',
-    meta_description: '',
-    meta_keywords: '',
-    images: []
+  
+  const timestamp = Date.now().toString().slice(-6)
+  const sku = `SKU-HEAD-${timestamp}`
+  
+  form.value.name = 'Premium Wireless Headphones'
+  form.value.description = 'High-quality wireless headphones with noise cancellation, 40-hour battery life, and premium sound quality.'
+  form.value.short_description = 'Premium wireless headphones with noise cancellation and 40-hour battery.'
+  form.value.price = 149.99
+  form.value.compare_price = 199.99
+  
+  // Try to find a subcategory
+  const firstCategory = categories.value[0]
+  const subCategory = firstCategory?.children?.[0]
+  form.value.category_id = subCategory?.id || firstCategory?.id || null
+  
+  // Update selected category display
+  if (form.value.category_id) {
+    const findCategory = (nodes: CategoryNode[], id: number): CategoryNode | null => {
+      for (const node of nodes) {
+        if (node.id === id) return node
+        if (node.children) {
+          const found = findCategory(node.children, id)
+          if (found) return found
+        }
+      }
+      return null
+    }
+    const found = findCategory(categories.value, form.value.category_id)
+    if (found) {
+      selectedCategory.value = { id: found.id, label: found.label }
+    }
   }
+  
+  form.value.status = 'active'
+  form.value.stock_quantity = 50
+  form.value.stock_status = 'in_stock'
+  form.value.sku = sku
+  form.value.weight = 0.45
+  form.value.dimensions_length = 20
+  form.value.dimensions_width = 15
+  form.value.dimensions_height = 8
+  form.value.meta_title = ''
+  form.value.meta_description = ''
+  form.value.meta_keywords = ''
+  form.value.images = []
   
   toast.add({
     severity: 'info',
     summary: '✅ Test Data Loaded',
-    detail: 'Add an image and submit!',
+    detail: 'Add images and submit!',
     life: 3000
   })
 }
 
+// Lifecycle
 onMounted(() => {
   fetchCategories()
+  document.addEventListener('click', handleClickOutside)
   ;(window as any).fillTestData = fillTestData
-  console.log('📝 Type: fillTestData() to auto-fill the form')
+  console.log('📝 Type: fillTestData() in console to auto-fill the form')
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -549,7 +968,30 @@ onMounted(() => {
   border-color: #ef4444;
 }
 
-/* ✅ Responsive fixes */
+.category-item {
+  transition: all 0.2s ease;
+}
+
+/* Custom scrollbar for dropdown */
+.max-h-80::-webkit-scrollbar {
+  width: 6px;
+}
+
+.max-h-80::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.max-h-80::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.max-h-80::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Responsive fixes */
 @media (max-width: 640px) {
   :deep(.p-inputtext) {
     font-size: 0.875rem !important;

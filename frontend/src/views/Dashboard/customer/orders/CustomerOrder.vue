@@ -138,16 +138,12 @@ const fetchOrders = async () => {
   loading.value = true
   error.value = ''
   try {
-    console.log('Fetching orders - Page:', pagination.value.current_page, 'Per Page:', pagination.value.per_page)
-    
     const response = await api.get('/orders', { 
       params: { 
         page: pagination.value.current_page,
         per_page: pagination.value.per_page 
       } 
     })
-    
-    console.log('API Response:', response.data)
     
     const data = response.data
     
@@ -164,9 +160,6 @@ const fetchOrders = async () => {
       
       // IMPORTANT: Update first value for Paginator
       first.value = (pagination.value.current_page - 1) * pagination.value.per_page
-      
-      console.log('Updated pagination:', pagination.value)
-      console.log('First value:', first.value)
     } else {
       orders.value = []
     }
@@ -179,11 +172,9 @@ const fetchOrders = async () => {
 }
 
 const onPageChange = (event: any) => {
-  console.log('Page change event:', event)
   
   // Calculate the page number from the event
   const page = Math.floor(event.first / event.rows) + 1
-  console.log('New page:', page)
   
   if (page !== pagination.value.current_page) {
     pagination.value.current_page = page

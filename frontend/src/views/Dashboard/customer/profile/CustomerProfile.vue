@@ -10,9 +10,19 @@
     <div class="bg-white rounded-lg shadow-sm p-6">
       <div class="flex items-center gap-6">
         <div class="relative">
-          <div class="w-24 h-24 rounded-full bg-[#00685F] text-white flex items-center justify-center text-3xl font-semibold">
+          <!-- Avatar Display -->
+          <div v-if="avatarPreview || form.avatar" class="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200">
+            <img 
+              :src="avatarPreview || form.avatar" 
+              alt="Avatar" 
+              class="w-full h-full object-cover"
+              @error="handleAvatarError"
+            />
+          </div>
+          <div v-else class="w-24 h-24 rounded-full bg-[#00685F] text-white flex items-center justify-center text-3xl font-semibold">
             {{ userInitials }}
           </div>
+          
           <button 
             type="button"
             @click="triggerFileInput"
@@ -25,13 +35,32 @@
             type="file" 
             accept="image/*"
             class="hidden"
-            @change="handleAvatarUpload"
+            @change="onFileSelect"
           />
         </div>
         <div>
           <p class="text-sm text-gray-600">Upload a new avatar</p>
           <p class="text-xs text-gray-400">PNG, JPG up to 2MB</p>
-          <p v-if="avatarUrl" class="text-xs text-green-600 mt-1">Avatar uploaded successfully</p>
+          <div v-if="avatarFile" class="text-xs text-blue-600 mt-1">
+            <i class="pi pi-info-circle"></i> New avatar selected (will be uploaded on save)
+          </div>
+          <div v-if="form.avatar && !avatarFile" class="text-xs text-green-600 mt-1">
+            <i class="pi pi-check-circle"></i> Avatar uploaded
+          </div>
+        </div>
+      </div>
+      
+      <!-- Upload Progress -->
+      <div v-if="uploading" class="mt-3">
+        <div class="flex items-center gap-3">
+          <i class="pi pi-spin pi-spinner text-[#00685F]"></i>
+          <span class="text-sm text-gray-600">Uploading avatar... {{ uploadProgress }}%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+          <div 
+            class="bg-[#00685F] h-2 rounded-full transition-all duration-300"
+            :style="{ width: uploadProgress + '%' }"
+          ></div>
         </div>
       </div>
     </div>
@@ -102,7 +131,7 @@
             type="submit" 
             label="Save Changes" 
             icon="pi pi-save"
-            :loading="loading"
+            :loading="submitting"
             class="bg-[#00685F] border-[#00685F] hover:bg-[#004F45]"
           />
           <Button 
@@ -186,12 +215,20 @@ const authStore = useAuthStore()
 const toast = useToast()
 const fileInput = ref<HTMLInputElement | null>(null)
 
-const loading = ref(false)
+// Cloudinary configuration
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'your-cloud-name'
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_PRODUCT_PRESET || 'product_preset'
+
+// State
+const submitting = ref(false)
+const uploading = ref(false)
+const uploadProgress = ref(0)
 const passwordLoading = ref(false)
 const successMessage = ref('')
 const passwordSuccess = ref('')
 const passwordError = ref('')
-const avatarUrl = ref('')
+const avatarFile = ref<File | null>(null)
+const avatarPreview = ref<string>('')
 const errors = ref<Record<string, string>>({})
 
 // Form data
@@ -199,7 +236,8 @@ const form = ref({
   name: '',
   email: '',
   phone: '',
-  date_of_birth: null as Date | null
+  date_of_birth: null as Date | null,
+  avatar: '' // Will store Cloudinary URL after upload
 })
 
 // Password form
@@ -226,6 +264,40 @@ const formatDate = (date: Date | null): string | null => {
   return `${year}-${month}-${day}`
 }
 
+// ✅ Upload avatar to Cloudinary (only called on submit)
+const uploadToCloudinary = async (file: File): Promise<string | null> => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET)
+  formData.append('folder', 'avatars')
+
+  try {
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: 'POST',
+        body: formData,
+      }
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error?.message || 'Upload failed')
+    }
+
+    const result = await response.json()
+    return result.secure_url
+  } catch (error: any) {
+    toast.add({
+      severity: 'error',
+      summary: 'Upload Failed',
+      detail: error.message || 'Failed to upload avatar to Cloudinary',
+      life: 5000
+    })
+    return null
+  }
+}
+
 // Fetch profile data
 const fetchProfile = async () => {
   try {
@@ -236,11 +308,13 @@ const fetchProfile = async () => {
       name: data.name || '',
       email: data.email || '',
       phone: data.profile?.phone || '',
-      date_of_birth: data.profile?.date_of_birth ? new Date(data.profile.date_of_birth) : null
+      date_of_birth: data.profile?.date_of_birth ? new Date(data.profile.date_of_birth) : null,
+      avatar: data.profile?.avatar || ''
     }
     
+    // Set avatar preview if exists
     if (data.profile?.avatar) {
-      avatarUrl.value = data.profile.avatar
+      avatarPreview.value = data.profile.avatar
     }
   } catch (error: any) {
     toast.add({
@@ -257,11 +331,13 @@ const triggerFileInput = () => {
   fileInput.value?.click()
 }
 
-// Handle avatar upload
-const handleAvatarUpload = async (event: Event) => {
+// ✅ Handle file selection - ONLY store the file, don't upload
+const onFileSelect = (event: Event) => {
   const input = event.target as HTMLInputElement
   if (input.files && input.files[0]) {
     const file = input.files[0]
+    
+    // Validate file size (2MB max)
     if (file.size > 2 * 1024 * 1024) {
       toast.add({
         severity: 'error',
@@ -269,56 +345,95 @@ const handleAvatarUpload = async (event: Event) => {
         detail: 'File size must be less than 2MB',
         life: 3000
       })
+      input.value = ''
       return
     }
 
-    try {
-      const formData = new FormData()
-      formData.append('avatar', file)
-
-      const response = await api.put('/profile/avatar', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      })
-
-      if (response.data.status === 'success') {
-        avatarUrl.value = response.data.data?.avatar || ''
-        toast.add({
-          severity: 'success',
-          summary: 'Success',
-          detail: 'Avatar updated successfully',
-          life: 3000
-        })
-        await authStore.fetchProfile()
-      }
-    } catch (error: any) {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
       toast.add({
         severity: 'error',
         summary: 'Error',
-        detail: error.response?.data?.message || 'Failed to upload avatar',
+        detail: 'Please select an image file',
         life: 3000
       })
+      input.value = ''
+      return
     }
+
+    // Store the file
+    avatarFile.value = file
+    
+    // Show preview using object URL
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      avatarPreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+    
+    toast.add({
+      severity: 'info',
+      summary: 'Avatar Selected',
+      detail: 'Avatar will be uploaded when click save changes',
+      life: 3000
+    })
+  }
+}
+
+const handleAvatarError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  if (img) {
+    img.src = `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" font-size="40" text-anchor="middle" dy=".3em" fill="%239ca3af"%3E${userInitials.value}%3C/text%3E%3C/svg%3E`
+    img.onerror = null
   }
 }
 
 // Update profile
 const updateProfile = async () => {
-  loading.value = true
   errors.value = {}
   successMessage.value = ''
+  submitting.value = true
 
   try {
-    const response = await api.put('/profile', {
+    let avatarUrl = form.value.avatar
+
+    // ✅ Upload avatar to Cloudinary only if a new file is selected
+    if (avatarFile.value) {
+      uploading.value = true
+      uploadProgress.value = 0
+      
+      const uploadedUrl = await uploadToCloudinary(avatarFile.value)
+      if (uploadedUrl) {
+        avatarUrl = uploadedUrl
+        uploadProgress.value = 100
+      }
+      uploading.value = false
+      uploadProgress.value = 0
+    }
+
+    // Prepare payload
+    const payload = {
       name: form.value.name,
       phone: form.value.phone,
-      date_of_birth: formatDate(form.value.date_of_birth)
-    })
+      date_of_birth: formatDate(form.value.date_of_birth),
+      avatar: avatarUrl // Send Cloudinary URL
+    }
+
+    const response = await api.put('/profile', payload)
 
     if (response.data.status === 'success') {
+      // Clear the avatar file after successful upload
+      avatarFile.value = null
+      
+      // Update form with new avatar URL
+      if (avatarUrl) {
+        form.value.avatar = avatarUrl
+        avatarPreview.value = avatarUrl
+      }
+      
       await authStore.fetchProfile()
       successMessage.value = 'Profile updated successfully!'
+      
       toast.add({
         severity: 'success',
         summary: 'Success',
@@ -338,7 +453,9 @@ const updateProfile = async () => {
       })
     }
   } finally {
-    loading.value = false
+    submitting.value = false
+    uploading.value = false
+    uploadProgress.value = 0
   }
 }
 
@@ -377,9 +494,14 @@ const changePassword = async () => {
 
 // Reset form
 const resetForm = () => {
+  // Reset avatar selection
+  avatarFile.value = null
+  // Reset form to saved values
   fetchProfile()
   errors.value = {}
   successMessage.value = ''
+  passwordSuccess.value = ''
+  passwordError.value = ''
 }
 
 onMounted(() => {
@@ -407,5 +529,10 @@ onMounted(() => {
 
 .relative button:hover {
   transform: scale(1.1);
+}
+
+/* Avatar upload progress */
+.bg-gray-200 {
+  background-color: #e5e7eb;
 }
 </style>

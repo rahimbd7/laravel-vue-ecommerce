@@ -278,8 +278,16 @@ const panelMenuItems = computed(() => {
         label: 'User Management',
         icon: 'pi pi-users',
         items: [
-          { label: 'All Users', icon: 'pi pi-list', to: '/dashboard/admin/users', command: () => router.push('/dashboard/admin/users') },
+          { label: 'User Overview', icon: 'pi pi-list', to: '/dashboard/admin/users', command: () => router.push('/dashboard/admin/users') },
           { label: 'Manage Users', icon: 'pi pi-user', to: '/dashboard/admin/users/user-management', command: () => router.push('/dashboard/admin/users/user-management') },
+        ]
+      },
+      {
+        label: 'Category',
+        icon: 'pi pi-box',
+        items: [
+          { label: 'Manage Category', icon: 'pi pi-shopping-cart', to: '/dashboard/admin/category', command: () => router.push('/dashboard/admin/category') },
+          // { label: 'Add Product', icon: 'pi pi-plus', to: '/dashboard/admin/products/create', command: () => router.push('/dashboard/admin/products/create') }
         ]
       },
       {
@@ -287,7 +295,7 @@ const panelMenuItems = computed(() => {
         icon: 'pi pi-box',
         items: [
           { label: 'All Products', icon: 'pi pi-list', to: '/dashboard/admin/products', command: () => router.push('/dashboard/admin/products') },
-          { label: 'Add Product', icon: 'pi pi-plus', to: '/dashboard/admin/products/create', command: () => router.push('/dashboard/admin/products/create') }
+          // { label: 'Add Product', icon: 'pi pi-plus', to: '/dashboard/admin/products/create', command: () => router.push('/dashboard/admin/products/create') }
         ]
       },
       {
@@ -309,6 +317,14 @@ const panelMenuItems = computed(() => {
         icon: 'pi pi-credit-card',
         items: [
           { label: 'All Payments', icon: 'pi pi-list', to: '/dashboard/admin/payments', command: () => router.push('/dashboard/admin/payments') }
+        ]
+      },
+      {
+        label: 'Coupons',
+        icon: 'pi pi-tag',
+        items: [
+          { label: 'Create  Coupons', icon: 'pi pi-list', to: '/dashboard/admin/coupons', command: () => router.push('/dashboard/admin/coupons') },
+          { label: 'Manage Coupons', icon: 'pi pi-list', to: '/dashboard/admin/coupons/management', command: () => router.push('/dashboard/admin/coupons/management') }
         ]
       },
       {
@@ -359,6 +375,14 @@ const panelMenuItems = computed(() => {
         items: [
           { label: 'Shipping Settings', icon: 'pi pi-cog', to: '/dashboard/vendor/shipping', command: () => router.push('/dashboard/vendor/shipping') }
         ]
+      },
+      {
+        label: 'Coupons',
+        icon: 'pi pi-tag',
+        items: [
+          { label: 'Create Coupon', icon: 'pi pi-list', to: '/dashboard/vendor/coupons/create', command: () => router.push('/dashboard/vendor/coupons/create') },
+          { label: 'Coupons Management', icon: 'pi pi-plus', to: '/dashboard/vendor/coupons/management', command: () => router.push('/dashboard/vendor/coupons/management') }
+        ]
       }
     )
   }
@@ -394,7 +418,14 @@ const panelMenuItems = computed(() => {
         items: [
           { label: 'Payment History', icon: 'pi pi-list', to: '/dashboard/customer/payments', command: () => router.push('/dashboard/customer/payments') }
         ]
-      }
+      },
+      {
+        label: 'Coupons',
+        icon: 'pi pi-tag',
+        items: [
+          { label: 'My Coupons', icon: 'pi pi-list', to: '/dashboard/customer/coupons', command: () => router.push('/dashboard/customer/coupons') }
+        ]
+      },
     )
   }
 
