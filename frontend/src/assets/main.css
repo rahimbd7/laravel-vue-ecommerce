@@ -1,1 +1,3 @@
+/* Tailwind v4 engine first, then our tokens + component layer. */
 @import "tailwindcss";
+@import "./design-system.css";

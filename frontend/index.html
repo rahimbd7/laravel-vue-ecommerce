@@ -1,13 +1,52 @@
 <!DOCTYPE html>
-<html lang="">
+<!--
+  lang was empty (""), which breaks WCAG 3.1.1 Language of Page: screen readers
+  fall back to the OS voice and mispronounce every word on the site.
+-->
+<html lang="en">
   <head>
     <meta charset="UTF-8">
     <link rel="icon" href="/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vite App</title>
+
+    <!--
+      `maximum-scale` / `user-scalable=no` are deliberately absent: blocking
+      pinch-zoom fails WCAG 1.4.4 Resize Text. `viewport-fit=cover` lets the
+      sticky checkout bar sit above the iPhone home indicator.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <!-- Brand + SEO. The title used to literally read "Vite App". -->
+    <title>My Shop - Multi-Vendor Marketplace</title>
+    <meta name="description" content="Shop thousands of products from trusted independent sellers. Fast delivery, secure checkout and hassle-free returns.">
+    <meta name="theme-color" content="#00685F">
+    <meta name="color-scheme" content="light">
+
+    <!-- Social preview so shared links are not blank cards -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="My Shop">
+    <meta property="og:title" content="My Shop - Multi-Vendor Marketplace">
+    <meta property="og:description" content="Shop thousands of products from trusted independent sellers.">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <!--
+      Warm up the API socket during HTML parse. Saves one DNS + TLS round trip
+      (typically 100-300ms on mobile) before the first product request fires.
+    -->
+    <link rel="preconnect" href="http://localhost:8000" crossorigin>
+    <link rel="dns-prefetch" href="https://res.cloudinary.com">
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   </head>
   <body>
     <div id="app"></div>
+
+    <!-- Without this, JS-disabled or failed-bundle visitors saw a blank page -->
+    <noscript>
+      <div style="max-width:36rem;margin:15vh auto;padding:2rem;font-family:system-ui,sans-serif;text-align:center;color:#1f2937">
+        <h1 style="color:#00685F">JavaScript is required</h1>
+        <p>My Shop needs JavaScript to run. Please enable it in your browser settings and reload this page.</p>
+      </div>
+    </noscript>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -1,165 +1,105 @@
-// import { createRouter, createWebHistory } from "vue-router";
-// import Home from "../views/Home/Home.vue";
-// import Shop from "../views/Products/Shop.vue";
-// import ProductDetail from "../views/Products/ProductDetail.vue";
-// import CartDetails from "../views/Cart/CartDetails.vue";
-// import Checkout from "../views/Checkout/Checkout.vue";
-// import LoginRegister from "../views/Auth/LoginRegister.vue";
-// import OrderList from "../views/Orders/OrderList.vue";
-// import OrderDetails from "../views/Orders/OrderDetails.vue";
-
-// const router = createRouter({
-//   history: createWebHistory(),
-//   routes: [
-//     {
-//       path: "/",
-//       name: "home",
-//       component: () => Home,
-//     },
-//     {
-//       path: "/shop",
-//       name: "shop",
-//       component: () => Shop,
-//     },
-//     {
-//       path: "/product/:slug",
-//       name: "product-detail",
-//       component: () => ProductDetail,
-//     },
-//     {
-//       path: "/category/:slug",
-//       name: "category",
-//       component: () => Shop,
-//     },
-//     {
-//       path: "/collections",
-//       name: "collections",
-//       component: () => Shop,
-//     },
-//     {
-//       path: "/new-arrivals",
-//       name: "new-arrivals",
-//       component: () => Shop,
-//     },
-//     {
-//       path: "/sale",
-//       name: "sale",
-//       component: () => Shop,
-//     },
-//     {
-//       path: "/cart",
-//       name: "cart",
-//       component: () => CartDetails,
-//     },
-//     {
-//       path: "/checkout",
-//       name: "checkout",
-//       component: () => Checkout,
-//     },
-//     {
-//       path: "/orders",
-//       name: "OrderList",
-//       component: () => OrderList,
-//       meta: { requiresAuth: true },
-//     },
-//     {
-//       path: "/order/:id",
-//       name: "OrderDetail",
-//       component: () => OrderDetails,
-//       meta: { requiresAuth: true },
-//     },
-//     {
-//       path: "/login",
-//       name: "login",
-//       component: () => LoginRegister,
-//     },
-//   ],
-// });
-
-// export default router;
-
-
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
 import { useAuthStore } from "@/stores/auth.store";
 
-// Import route modules
+// Route modules
 import { publicRoutes } from "./routes/public.route";
 import { authRoutes } from "./routes/auth.route";
-// import { orderRoutes } from "./routes/order.route";
 import { dashboardRoutes } from "./routes/dashboard";
 
-declare module 'vue-router' {
+declare module "vue-router" {
   interface RouteMeta {
     requiresAuth?: boolean;
     guest?: boolean;
     roles?: string[];
+    title?: string;
+    breadcrumb?: string[];
+    layout?: "dashboard" | "bare" | "public";
+    mode?: "login" | "register";
   }
 }
 
+const APP_NAME = "My Shop";
+
+const ROLE_HOME: Record<string, string> = {
+  admin: "/dashboard/admin",
+  vendor: "/dashboard/vendor",
+  customer: "/dashboard/customer",
+};
+
 const routes: RouteRecordRaw[] = [
-  ...publicRoutes, 
-  ...authRoutes, 
-  // ...orderRoutes, 
-  ...dashboardRoutes
+  ...publicRoutes,
+  ...authRoutes,
+  ...dashboardRoutes,
+  {
+    path: "/:pathMatch(.*)*",
+    name: "not-found",
+    component: () => import("@/views/NotFound.vue"),
+    meta: { title: "Page Not Found" },
+  },
 ];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition;
+    if (to.hash) return { el: to.hash, behavior: "smooth", top: 80 };
+    if (to.path === from.path) return false;
+    return { top: 0 };
+  },
 });
 
-// Navigation Guards
-router.beforeEach((to, from, next) => {
+// ============================================================
+// ✅ FIXED: Navigation guards using RETURN values (not next())
+// ============================================================
+
+router.beforeEach((to, _from) => {
   const authStore = useAuthStore();
-  const token = localStorage.getItem("token");
-  const isAuthenticated = authStore.isAuthenticated || !!token;
+  const isAuthenticated = authStore.isAuthenticated || !!localStorage.getItem("token");
+  const role = authStore.user?.role as string | undefined;
 
-  // Check if route requires authentication
+  // ✅ Redirect to login if auth required
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next("/login");
-    return;
+    return { path: "/login", query: { redirect: to.fullPath } };
   }
 
-  // Redirect authenticated users from guest pages (login/register)
+  // ✅ Redirect authenticated users away from guest pages
   if (to.meta.guest && isAuthenticated) {
-    const role = authStore.user?.role as string;
-    const roleMap: Record<string, string> = {
-      admin: "/dashboard/admin",
-      vendor: "/dashboard/vendor",
-      customer: "/dashboard/customer",
-    };
-    next(roleMap[role] || "/");
-    return;
+    return ROLE_HOME[role ?? ""] || "/";
   }
 
-  // Redirect /dashboard to role-specific dashboard
-  if (to.path === '/dashboard' && isAuthenticated) {
-    const role = authStore.user?.role as string;
-    const roleMap: Record<string, string> = {
-      admin: "/dashboard/admin",
-      vendor: "/dashboard/vendor",
-      customer: "/dashboard/customer",
-    };
-    next(roleMap[role] || "/");
-    return;
+  // ✅ Redirect /dashboard to role-specific dashboard
+  if (to.path === "/dashboard" && isAuthenticated) {
+    return ROLE_HOME[role ?? ""] || "/";
   }
 
-  // Check role-based access for dashboard routes
-  if (to.meta.roles && Array.isArray(to.meta.roles) && isAuthenticated) {
-    const userRole = authStore.user?.role;
-    if (!userRole || !to.meta.roles.includes(userRole)) {
-      const roleMap: Record<string, string> = {
-        admin: "/dashboard/admin",
-        vendor: "/dashboard/vendor",
-        customer: "/dashboard/customer",
-      };
-      next(roleMap[userRole as string] || "/");
-      return;
+  // ✅ Check role-based access
+  if (to.meta.roles?.length && isAuthenticated) {
+    if (!role || !to.meta.roles.includes(role)) {
+      return ROLE_HOME[role ?? ""] || "/";
     }
   }
 
-  next();
+  // ✅ Allow navigation
+  return true;
+});
+
+// Handle errors - catch chunk loading failures
+router.onError((error, to) => {
+  console.error("Router error:", error);
+  
+  // If it's a chunk loading error, try reloading the page
+  if (error.message?.includes('Loading chunk') || 
+      error.message?.includes('Failed to fetch dynamically imported module')) {
+    window.location.href = to.fullPath;
+  }
+});
+
+// Document title
+router.afterEach((to) => {
+  const title = to.meta.title;
+  document.title = title ? `${title} | ${APP_NAME}` : APP_NAME;
 });
 
 export default router;

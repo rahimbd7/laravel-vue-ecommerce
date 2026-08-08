@@ -1,0 +1,432 @@
+/* =============================================================================
+   DESIGN SYSTEM  -  Multi-vendor E-commerce
+   -----------------------------------------------------------------------------
+   Single source of truth for colour, type, spacing, elevation and motion.
+   Exposed to Tailwind v4 through @theme so every token becomes a first-class
+   utility (bg-brand-600, text-ink-500, shadow-card, rounded-card ...).
+
+   WHY: before this file the hex #00685F was hard-coded 341 times across 61
+   files. Re-branding was impossible and the palette had already drifted -
+   three different greens, blue focus rings on a green brand, blue selected
+   states inside green-bordered tiles.
+   ========================================================================== */
+
+@theme {
+  /* ---------------------------------------------------------------------------
+     BRAND - ramp built around the primary #00685F, parked at 600 so existing
+     markup renders the identical colour. 700 == the legacy hover #004F45.
+     Contrast on white: 600 = 6.68:1 (AA), 700 = 8.9:1 (AAA).
+     300/400 are the ONLY safe brand tints on dark surfaces (8.0:1 / 5.4:1).
+  ------------------------------------------------------------------------- */
+  --color-brand-50:  #eef8f6;
+  --color-brand-100: #d3ede8;
+  --color-brand-200: #a8dbd3;
+  --color-brand-300: #6cbcb2;
+  --color-brand-400: #3d9c92;
+  --color-brand-500: #168076;
+  --color-brand-600: #00685f;
+  --color-brand-700: #004f45;
+  --color-brand-800: #003d36;
+  --color-brand-900: #002b26;
+  --color-brand-950: #001a17;
+
+  /* ---------------------------------------------------------------------------
+     INK - neutral text/border ramp. ink-400 and lighter must NEVER carry
+     meaning: 2.54:1 on white fails WCAG 1.4.3. Body copy uses ink-500+.
+  ------------------------------------------------------------------------- */
+  --color-ink-50:  #f9fafb;
+  --color-ink-100: #f3f4f6;
+  --color-ink-200: #e5e7eb;
+  --color-ink-300: #d1d5db;
+  --color-ink-400: #9ca3af;
+  --color-ink-500: #6b7280;
+  --color-ink-600: #4b5563;
+  --color-ink-700: #374151;
+  --color-ink-800: #1f2937;
+  --color-ink-900: #111827;
+
+  /* ---------------------------------------------------------------------------
+     SEMANTIC - one hue per meaning, shared by badges, toasts, form state and
+     order status. Previously every view invented its own shade.
+  ------------------------------------------------------------------------- */
+  --color-success-50:  #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+
+  --color-warning-50:  #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+
+  --color-danger-50:  #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+
+  --color-info-50:  #eff6ff;
+  --color-info-100: #dbeafe;
+  --color-info-500: #3b82f6;
+  --color-info-600: #2563eb;
+  --color-info-700: #1d4ed8;
+
+  /* Surfaces - so "grey page / white card" becomes a token, not a habit */
+  --color-surface:      #ffffff;
+  --color-surface-sunk: #f9fafb;
+  --color-surface-alt:  #f3f4f6;
+
+  /* ---------------------------------------------------------------------------
+     TYPOGRAPHY - system stack: zero webfont payload, zero CLS, no FOUT.
+  ------------------------------------------------------------------------- */
+  --font-sans: "Inter var", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --text-2xs: 0.6875rem;          /* 11px - legal / meta only */
+  --text-2xs--line-height: 1rem;
+
+  /* Elevation - 3 steps only. Cards were mixing shadow-sm/lg/xl at random. */
+  --shadow-card:       0 1px 2px 0 rgb(16 24 40 / 0.04), 0 1px 3px 0 rgb(16 24 40 / 0.06);
+  --shadow-card-hover: 0 4px 6px -2px rgb(16 24 40 / 0.04), 0 12px 16px -4px rgb(16 24 40 / 0.08);
+  --shadow-popover:    0 8px 8px -4px rgb(16 24 40 / 0.04), 0 20px 24px -4px rgb(16 24 40 / 0.10);
+
+  /* Radii - "control" and "card" so buttons and inputs can never disagree */
+  --radius-control: 0.5rem;
+  --radius-card:    0.75rem;
+
+  /* Motion */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-shake:     shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  --animate-check-pop: check-pop 0.35s var(--ease-out-quint) both;
+  --animate-rise:      rise 0.35s var(--ease-out-quint) both;
+  --animate-shimmer:   shimmer 1.6s linear infinite;
+}
+
+/* =============================================================================
+   KEYFRAMES
+   ========================================================================== */
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+@keyframes check-pop {
+  0%   { transform: scale(0.4);  opacity: 0; }
+  60%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+@keyframes rise {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+
+/* =============================================================================
+   BASE LAYER
+   ========================================================================== */
+@layer base {
+  html {
+    /* Router / anchor scrolling must not park content under the sticky nav */
+    scroll-padding-top: 5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-surface-sunk);
+    color: var(--color-ink-800);
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typographic hierarchy. h1 previously ranged from text-xl to text-4xl with
+     no rule; these defaults give every page the same rhythm for free. */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-ink-900);
+    font-weight: 700;
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+  p { text-wrap: pretty; }
+
+  /* --- WCAG 2.1 / 2.4.7 Focus Visible ------------------------------------
+     There was no focus style anywhere in the app: keyboard users were lost.
+     :focus-visible keeps pointer clicks clean while making tabbing obvious. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+    border-radius: var(--radius-control);
+  }
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus:not(:focus-visible) {
+    outline: none;
+  }
+  /* Brand green is only 2.66:1 on ink-900 - swap for a light tint on dark UI */
+  .on-dark :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline-color: var(--color-brand-300);
+  }
+
+  ::selection { background-color: var(--color-brand-100); color: var(--color-brand-900); }
+
+  /* Consistent scrollbars. Shop.vue used to style these from inside a scoped
+     block, which leaked to every page in the app. */
+  * { scrollbar-width: thin; scrollbar-color: var(--color-ink-300) transparent; }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-ink-300); border-radius: 9999px;
+    border: 2px solid transparent; background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover { background: var(--color-ink-400); background-clip: content-box; }
+
+  /* An image must never be able to blow out a grid track */
+  img, svg, video, canvas { max-width: 100%; height: auto; }
+
+  /* --- WCAG 2.1 / 2.3.3 Animation from Interactions --------------------- */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* =============================================================================
+   COMPONENT LAYER - the shared vocabulary. Each class below replaced a
+   copy-pasted utility soup that had already drifted between views.
+   ========================================================================== */
+@layer components {
+
+  /* --- Buttons ---------------------------------------------------------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    font-weight: 600; white-space: nowrap; cursor: pointer; text-decoration: none;
+    border: 1px solid transparent; border-radius: var(--radius-control);
+    transition: background-color .18s, color .18s, border-color .18s, box-shadow .18s, transform .12s;
+    /* 2.5.5 Target Size: 44px is the WCAG AAA / Apple HIG minimum. The old
+       `px-4 py-2` buttons were 36px and hard to hit on a phone. */
+    min-height: 2.75rem; padding: 0.625rem 1.125rem; font-size: 0.875rem;
+  }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  .btn-xs { min-height: 1.875rem; padding: 0.25rem 0.625rem; font-size: 0.75rem; gap: 0.25rem; }
+  .btn-sm { min-height: 2.25rem;  padding: 0.4375rem 0.875rem; font-size: 0.8125rem; }
+  .btn-lg { min-height: 3.125rem; padding: 0.8125rem 1.5rem; font-size: 1rem; }
+  .btn-block { width: 100%; }
+  .btn-icon { padding: 0; width: 2.75rem; min-width: 2.75rem; }
+  .btn-icon.btn-sm { width: 2.25rem;  min-width: 2.25rem; }
+  .btn-icon.btn-xs { width: 1.875rem; min-width: 1.875rem; }
+
+  .btn-primary { background-color: var(--color-brand-600); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background-color: var(--color-brand-700); }
+
+  .btn-secondary { background-color: var(--color-ink-100); color: var(--color-ink-800); border-color: var(--color-ink-200); }
+  .btn-secondary:hover:not(:disabled) { background-color: var(--color-ink-200); }
+
+  .btn-outline { background-color: transparent; color: var(--color-brand-700); border-color: var(--color-brand-600); }
+  .btn-outline:hover:not(:disabled) { background-color: var(--color-brand-50); }
+
+  .btn-ghost { background-color: transparent; color: var(--color-ink-600); }
+  .btn-ghost:hover:not(:disabled) { background-color: var(--color-ink-100); color: var(--color-ink-900); }
+
+  .btn-danger { background-color: var(--color-danger-600); color: #fff; }
+  .btn-danger:hover:not(:disabled) { background-color: var(--color-danger-700); }
+
+  .btn-danger-soft { background-color: var(--color-danger-50); color: var(--color-danger-700); border-color: var(--color-danger-100); }
+  .btn-danger-soft:hover:not(:disabled) { background-color: var(--color-danger-100); }
+
+  .btn-success { background-color: var(--color-success-600); color: #fff; }
+  .btn-success:hover:not(:disabled) { background-color: var(--color-success-700); }
+
+  /* --- Surfaces --------------------------------------------------------- */
+  .card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-ink-200);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+  .card-interactive { transition: box-shadow .2s, border-color .2s, transform .2s; }
+  .card-interactive:hover { box-shadow: var(--shadow-card-hover); border-color: var(--color-ink-300); }
+  .card-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 1rem 1.25rem; border-bottom: 1px solid var(--color-ink-200);
+  }
+  .card-body { padding: 1.25rem; }
+  .card-foot {
+    padding: 1rem 1.25rem; border-top: 1px solid var(--color-ink-200);
+    background-color: var(--color-surface-sunk);
+    border-radius: 0 0 var(--radius-card) var(--radius-card);
+  }
+
+  /* --- Forms ------------------------------------------------------------ */
+  .field-label {
+    display: block; font-size: 0.8125rem; font-weight: 600;
+    color: var(--color-ink-700); margin-bottom: 0.375rem;
+  }
+  .field-required::after { content: " *"; color: var(--color-danger-600); }
+
+  .field-control {
+    display: block; width: 100%;
+    padding: 0.625rem 0.875rem; min-height: 2.75rem;
+    font-size: 0.9375rem; color: var(--color-ink-900);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-ink-300);
+    border-radius: var(--radius-control);
+    transition: border-color .15s, box-shadow .15s;
+    -webkit-appearance: none; appearance: none;
+  }
+  .field-control::placeholder { color: var(--color-ink-400); }
+  .field-control:hover:not(:disabled):not([aria-invalid="true"]) { border-color: var(--color-ink-400); }
+  .field-control:focus {
+    outline: none;
+    border-color: var(--color-brand-600);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-600) 18%, transparent);
+  }
+  .field-control:disabled { background-color: var(--color-ink-100); color: var(--color-ink-500); cursor: not-allowed; }
+
+  /* 3.3.1 Error Identification - colour is never the only signal: AppInput
+     also renders an icon plus text and wires aria-invalid/aria-describedby. */
+  .field-control[aria-invalid="true"] { border-color: var(--color-danger-600); }
+  .field-control[aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger-600) 18%, transparent);
+  }
+  .field-hint { margin-top: 0.375rem; font-size: 0.75rem; color: var(--color-ink-500); }
+  .field-error {
+    margin-top: 0.375rem; font-size: 0.75rem; font-weight: 500;
+    color: var(--color-danger-700); display: flex; align-items: flex-start; gap: 0.25rem;
+  }
+
+  select.field-control {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 0.625rem center; background-size: 1.25rem;
+    padding-right: 2.25rem;
+  }
+  /* iOS Safari zooms the viewport whenever a focused input is under 16px */
+  @media (max-width: 767px) { .field-control { font-size: 1rem; } }
+
+  /* Selectable tile - shipping method, payment method, address book */
+  .choice-tile {
+    display: flex; align-items: center; gap: 0.75rem; width: 100%;
+    padding: 1rem; cursor: pointer; text-align: left;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-ink-200);
+    border-radius: var(--radius-control);
+    transition: border-color .15s, background-color .15s, box-shadow .15s;
+  }
+  .choice-tile:hover { border-color: var(--color-brand-400); background-color: var(--color-brand-50); }
+  .choice-tile[data-selected="true"] {
+    border-color: var(--color-brand-600);
+    background-color: var(--color-brand-50);
+    box-shadow: inset 0 0 0 1px var(--color-brand-600);
+  }
+
+  /* --- Badges ----------------------------------------------------------- */
+  .badge {
+    display: inline-flex; align-items: center; gap: 0.3125rem;
+    padding: 0.1875rem 0.5rem; border-radius: 9999px;
+    font-size: 0.6875rem; font-weight: 600; line-height: 1.25rem;
+    text-transform: capitalize; white-space: nowrap;
+  }
+  .badge-dot::before {
+    content: ""; width: 0.375rem; height: 0.375rem;
+    border-radius: 9999px; background-color: currentColor; flex: none;
+  }
+  .badge-neutral { background-color: var(--color-ink-100);    color: var(--color-ink-700); }
+  .badge-brand   { background-color: var(--color-brand-50);   color: var(--color-brand-700); }
+  .badge-success { background-color: var(--color-success-50); color: var(--color-success-700); }
+  .badge-warning { background-color: var(--color-warning-50); color: var(--color-warning-700); }
+  .badge-danger  { background-color: var(--color-danger-50);  color: var(--color-danger-700); }
+  .badge-info    { background-color: var(--color-info-50);    color: var(--color-info-700); }
+
+  /* --- Tables ----------------------------------------------------------- */
+  .data-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.875rem; }
+  .data-table thead th {
+    position: sticky; top: 0; z-index: 1;
+    padding: 0.75rem 1rem; text-align: left;
+    font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--color-ink-500); background-color: var(--color-surface-sunk);
+    border-bottom: 1px solid var(--color-ink-200);
+  }
+  .data-table tbody td {
+    padding: 0.875rem 1rem; border-bottom: 1px solid var(--color-ink-100);
+    color: var(--color-ink-700); vertical-align: middle;
+  }
+  .data-table tbody tr:last-child td { border-bottom: 0; }
+  .data-table tbody tr { transition: background-color .12s; }
+  .data-table tbody tr:hover { background-color: var(--color-brand-50); }
+  .table-numeric { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* --- Skeletons -------------------------------------------------------- */
+  .skeleton {
+    background-color: var(--color-ink-200);
+    background-image: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.65) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+    border-radius: 0.375rem;
+  }
+  @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
+  /* --- Links ------------------------------------------------------------ */
+  .link {
+    color: var(--color-brand-700); font-weight: 500;
+    text-decoration: none; text-underline-offset: 3px;
+  }
+  .link:hover { text-decoration: underline; }
+  /* brand-600 on ink-900 is 2.66:1 and fails AA - brand-300 measures 8.0:1 */
+  .on-dark .link, .link-on-dark { color: var(--color-brand-300); }
+
+  /* --- Layout helpers --------------------------------------------------- */
+  .page-container { width: 100%; max-width: 80rem; margin-inline: auto; padding-inline: 1rem; }
+  @media (min-width: 640px)  { .page-container { padding-inline: 1.5rem; } }
+  @media (min-width: 1024px) { .page-container { padding-inline: 2rem; } }
+}
+
+/* =============================================================================
+   UTILITIES
+   ========================================================================== */
+@layer utilities {
+  /* WCAG 2.4.1 Bypass Blocks - visible only on keyboard focus */
+  .skip-link {
+    position: fixed; top: 0; left: 50%; z-index: 200;
+    transform: translate(-50%, -120%);
+    padding: 0.75rem 1.25rem; font-weight: 600;
+    color: #fff; background-color: var(--color-brand-700);
+    border-radius: 0 0 var(--radius-control) var(--radius-control);
+    transition: transform .18s var(--ease-out-quint);
+  }
+  .skip-link:focus { transform: translate(-50%, 0); }
+
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+
+  /* Horizontal snap rails - thumbnail galleries, mobile filter chips */
+  .snap-rail {
+    display: flex; gap: 0.75rem; overflow-x: auto;
+    scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+  }
+  .snap-rail > * { scroll-snap-align: start; flex: none; }
+
+  /* Money and counts must not jitter as digits change */
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* Route transition used by App.vue */
+  .fade-slide-enter-active, .fade-slide-leave-active {
+    transition: opacity .18s ease, transform .18s var(--ease-out-quint);
+  }
+  .fade-slide-enter-from { opacity: 0; transform: translateY(6px); }
+  .fade-slide-leave-to   { opacity: 0; transform: translateY(-4px); }
+}

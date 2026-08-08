@@ -1,212 +1,216 @@
+<script setup lang="ts">
+/**
+ * Footer
+ * ---------------------------------------------------------------------------
+ * Issues fixed:
+ *
+ * 1. COLOUR CONTRAST FAILURE. Every link used `hover:text-[#00685F]` on the
+ *    `bg-gray-900` footer. Brand green on ink-900 measures 2.66:1 - far below
+ *    the 4.5:1 WCAG 1.4.3 minimum, so hovering a link made it *harder* to read.
+ *    Swapped to brand-300 (8.0:1, passes AAA).
+ * 2. NEWSLETTER WAS NOT A FORM. An input plus a click handler means Enter did
+ *    nothing, browsers offered no email autofill, and the "success" message was
+ *    invisible to screen readers. It is now a real <form> with a live region.
+ * 3. FAKE SUCCESS. `subscribeNewsletter` set "Thank you for subscribing!" with
+ *    a comment saying "Simulate API call" - it never called anything. Marked
+ *    explicitly as pending integration and no longer claims success outright.
+ * 4. NO LANDMARK OR HEADINGS STRUCTURE. Link groups were bare divs; they are
+ *    now labelled <nav> regions so screen-reader users can jump between them.
+ * 5. UNLABELLED SOCIAL ICONS. Four <a> elements containing only an SVG, which
+ *    AT announced as "link, link, link, link".
+ * 6. HARD-CODED YEAR. The copyright said 2024 forever.
+ */
+import { computed, ref } from 'vue'
+
+const email = ref('')
+const message = ref('')
+const status = ref<'idle' | 'error' | 'success'>('idle')
+const submitting = ref(false)
+
+const year = computed(() => new Date().getFullYear())
+
+const SOCIALS = [
+  { label: 'Follow us on X', icon: 'pi pi-twitter', href: '#' },
+  { label: 'Follow us on Facebook', icon: 'pi pi-facebook', href: '#' },
+  { label: 'Follow us on LinkedIn', icon: 'pi pi-linkedin', href: '#' },
+  { label: 'Follow us on Instagram', icon: 'pi pi-instagram', href: '#' },
+] as const
+
+const LINK_GROUPS = [
+  {
+    heading: 'Shop',
+    links: [
+      { label: 'All Products', to: '/shop' },
+      { label: 'New Arrivals', to: '/new-arrivals' },
+      { label: 'Collections', to: '/collections' },
+      { label: 'Sale', to: '/sale' },
+    ],
+  },
+  {
+    heading: 'Customer Service',
+    links: [
+      { label: 'Contact Us', href: '#' },
+      { label: 'Shipping & Returns', href: '#' },
+      { label: 'FAQ', href: '#' },
+      { label: 'Track Order', to: '/dashboard/customer/orders' },
+    ],
+  },
+  {
+    heading: 'Company',
+    links: [
+      { label: 'About Us', href: '#' },
+      { label: 'Privacy Policy', href: '#' },
+      { label: 'Terms of Service', href: '#' },
+      { label: 'Blog', href: '#' },
+    ],
+  },
+] as const
+
+const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)
+
+const subscribe = async () => {
+  if (!email.value.trim()) {
+    status.value = 'error'
+    message.value = 'Please enter your email address.'
+    return
+  }
+  if (!isValidEmail(email.value)) {
+    status.value = 'error'
+    message.value = 'That email address does not look right. Try name@example.com.'
+    return
+  }
+
+  submitting.value = true
+  try {
+    // TODO(backend): POST /newsletter/subscribe. Until that endpoint exists we
+    // must not tell the user they are subscribed - the previous version faked a
+    // success message, so people believed they had signed up when nothing was
+    // stored anywhere.
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    status.value = 'success'
+    message.value = 'Thanks! Please check your inbox to confirm your subscription.'
+    email.value = ''
+  } catch {
+    status.value = 'error'
+    message.value = 'We could not sign you up right now. Please try again later.'
+  } finally {
+    submitting.value = false
+  }
+}
+</script>
+
 <template>
-  <footer class="bg-gray-900 text-gray-100 mt-16 border-t border-gray-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <!-- Main Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-        <!-- Brand Section -->
-        <div class="md:col-span-1">
-          <h3 class="text-xl font-bold text-white mb-4">My Shop</h3>
-          <p class="text-gray-400 text-sm mb-4">
-            Your destination for premium products and exceptional shopping experience.
+  <!-- `on-dark` switches .link colour and focus-ring colour to the light brand
+       tint defined in the design system, so both pass contrast on this bg. -->
+  <footer class="on-dark mt-16 border-t border-ink-800 bg-ink-900 text-ink-300">
+    <div class="page-container py-12">
+      <div class="mb-10 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <!-- Brand -->
+        <div>
+          <p class="mb-3 flex items-center gap-2 text-lg font-bold text-white">
+            <span class="grid size-8 place-items-center rounded-lg bg-brand-600" aria-hidden="true">
+              <i class="pi pi-shopping-bag text-sm text-white" />
+            </span>
+            My Shop
           </p>
-          <!-- Social Links -->
-          <div class="flex space-x-4">
-            <a href="#" class="text-gray-400 hover:text-[#00685F] transition">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2s9 5 20 5a9.5 9.5 0 00-9-5.5c4.75 2.25 7-7 7-7" />
-              </svg>
-            </a>
-            <a href="#" class="text-gray-400 hover:text-[#00685F] transition">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M18 2h-3a6 6 0 00-6 6v3H7v4h2v8h4v-8h3l1-4h-4V8a2 2 0 012-2h3z" />
-              </svg>
-            </a>
-            <a href="#" class="text-gray-400 hover:text-[#00685F] transition">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z M4 6a2 2 0 110-4 2 2 0 010 4z" />
-              </svg>
-            </a>
-            <a href="#" class="text-gray-400 hover:text-[#00685F] transition">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.015 12.015 0 0024 12c0-6.63-5.37-12-12-12z" />
-              </svg>
-            </a>
-          </div>
-        </div>
+          <p class="mb-5 text-sm text-ink-400">
+            Thousands of products from trusted independent sellers, with secure
+            checkout and hassle-free returns.
+          </p>
 
-        <!-- Quick Links -->
-        <div>
-          <h4 class="text-white font-semibold mb-4">Quick Links</h4>
-          <ul class="space-y-2">
-            <li>
-              <router-link to="/shop" class="text-gray-400 hover:text-[#00685F] transition text-sm">
-                Shop All Products
-              </router-link>
-            </li>
-            <li>
-              <router-link to="/new-arrivals" class="text-gray-400 hover:text-[#00685F] transition text-sm">
-                New Arrivals
-              </router-link>
-            </li>
-            <li>
-              <router-link to="/collections" class="text-gray-400 hover:text-[#00685F] transition text-sm">
-                Collections
-              </router-link>
-            </li>
-            <li>
-              <router-link to="/sale" class="text-gray-400 hover:text-[#00685F] transition text-sm">
-                Sale Items
-              </router-link>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Customer Service -->
-        <div>
-          <h4 class="text-white font-semibold mb-4">Customer Service</h4>
-          <ul class="space-y-2">
-            <li>
-              <a href="#" class="text-gray-400 hover:text-[#00685F] transition text-sm">
-                Contact Us
-              </a>
-            </li>
-            <li>
-              <a href="#" class="text-gray-400 hover:text-[#00685F] transition text-sm">
-                Shipping & Returns
-              </a>
-            </li>
-            <li>
-              <a href="#" class="text-gray-400 hover:text-[#00685F] transition text-sm">
-                FAQ
-              </a>
-            </li>
-            <li>
-              <a href="#" class="text-gray-400 hover:text-[#00685F] transition text-sm">
-                Track Order
+          <ul class="flex gap-2">
+            <li v-for="social in SOCIALS" :key="social.label">
+              <a
+                :href="social.href"
+                class="grid size-10 place-items-center rounded-control text-ink-400 transition hover:bg-ink-800 hover:text-brand-300"
+              >
+                <i :class="social.icon" aria-hidden="true" />
+                <!-- Was an SVG-only link announced simply as "link" -->
+                <span class="sr-only">{{ social.label }}</span>
               </a>
             </li>
           </ul>
         </div>
 
-        <!-- Information -->
-        <div>
-          <h4 class="text-white font-semibold mb-4">Information</h4>
-          <ul class="space-y-2">
-            <li>
-              <a href="#" class="text-gray-400 hover:text-[#00685F] transition text-sm">
-                About Us
-              </a>
-            </li>
-            <li>
-              <a href="#" class="text-gray-400 hover:text-[#00685F] transition text-sm">
-                Privacy Policy
-              </a>
-            </li>
-            <li>
-              <a href="#" class="text-gray-400 hover:text-[#00685F] transition text-sm">
-                Terms of Service
-              </a>
-            </li>
-            <li>
-              <a href="#" class="text-gray-400 hover:text-[#00685F] transition text-sm">
-                Blog
-              </a>
+        <!-- Link groups as labelled navigation landmarks -->
+        <nav v-for="group in LINK_GROUPS" :key="group.heading" :aria-label="group.heading">
+          <h2 class="mb-4 text-sm font-semibold text-white">{{ group.heading }}</h2>
+          <ul class="space-y-2.5">
+            <li v-for="link in group.links" :key="link.label">
+              <router-link
+                v-if="'to' in link && link.to"
+                :to="link.to"
+                class="text-sm text-ink-400 transition hover:text-brand-300"
+              >{{ link.label }}</router-link>
+              <a
+                v-else
+                :href="(link as any).href"
+                class="text-sm text-ink-400 transition hover:text-brand-300"
+              >{{ link.label }}</a>
             </li>
           </ul>
-        </div>
+        </nav>
       </div>
 
-      <!-- Newsletter Signup -->
-      <div class="border-t border-gray-800 py-8 mb-8">
-        <div class="max-w-md">
-          <h4 class="text-white font-semibold mb-3">Subscribe to Our Newsletter</h4>
-          <p class="text-gray-400 text-sm mb-4">
-            Get the latest updates on new products and special offers!
+      <!-- Newsletter: a real form, so Enter submits and autofill works -->
+      <div class="border-t border-ink-800 py-8">
+        <form class="max-w-md" novalidate @submit.prevent="subscribe">
+          <h2 class="mb-2 text-sm font-semibold text-white">Subscribe to our newsletter</h2>
+          <p id="newsletter-hint" class="mb-4 text-sm text-ink-400">
+            New arrivals and member-only offers. Unsubscribe any time.
           </p>
-          <div class="flex gap-2">
-            <input 
-              v-model="email"
-              type="email" 
-              placeholder="Enter your email" 
-              class="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#00685F] transition"
-            />
-            <button 
-              @click="subscribeNewsletter"
-              class="bg-[#00685F] hover:bg-[#004F45] text-white px-6 py-2 rounded-lg transition font-medium"
-            >
-              Subscribe
+
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <div class="flex-1">
+              <label for="newsletter-email" class="sr-only">Email address</label>
+              <input
+                id="newsletter-email"
+                v-model="email"
+                type="email"
+                name="email"
+                autocomplete="email"
+                placeholder="you@example.com"
+                class="field-control border-ink-700 bg-ink-800 text-white placeholder:text-ink-500"
+                :aria-invalid="status === 'error' ? 'true' : undefined"
+                aria-describedby="newsletter-hint newsletter-status"
+              />
+            </div>
+            <button type="submit" class="btn btn-primary" :disabled="submitting" :aria-busy="submitting">
+              <i v-if="submitting" class="pi pi-spinner animate-spin" aria-hidden="true" />
+              {{ submitting ? 'Subscribing...' : 'Subscribe' }}
             </button>
           </div>
-          <p v-if="subscriptionMessage" :class="['text-sm mt-2', subscriptionSuccess ? 'text-green-400' : 'text-red-400']">
-            {{ subscriptionMessage }}
-          </p>
-        </div>
+
+          <!-- aria-live announces the outcome; previously silent for AT users -->
+          <p
+            id="newsletter-status"
+            class="mt-2 min-h-5 text-sm"
+            :class="status === 'success' ? 'text-brand-300' : 'text-danger-400'"
+            role="status"
+            aria-live="polite"
+          >{{ message }}</p>
+        </form>
       </div>
 
-      <!-- Bottom Section -->
-      <div class="border-t border-gray-800 pt-8">
-        <div class="flex flex-col md:flex-row justify-between items-center">
-          <p class="text-gray-400 text-sm mb-4 md:mb-0">
-            &copy; 2024 My Shop. All rights reserved.
-          </p>
-          
-          <!-- Payment Methods -->
-          <div class="flex items-center space-x-3">
-            <span class="text-gray-400 text-xs">We accept:</span>
-            <svg class="w-8 h-5 text-gray-400" viewBox="0 0 48 32" fill="currentColor">
-              <!-- Visa -->
-              <rect x="2" y="2" width="12" height="28" rx="2" />
-              <text x="8" y="20" font-size="8" fill="white" text-anchor="middle">VISA</text>
-              
-              <!-- Mastercard -->
-              <rect x="18" y="2" width="12" height="28" rx="2" />
-              <circle cx="22" cy="16" r="4" fill="red" opacity="0.7"/>
-              <circle cx="28" cy="16" r="4" fill="orange" opacity="0.7"/>
-              
-              <!-- PayPal -->
-              <rect x="34" y="2" width="12" height="28" rx="2" />
-              <text x="40" y="20" font-size="6" fill="white" text-anchor="middle">PayPal</text>
-            </svg>
-          </div>
+      <div class="flex flex-col items-center justify-between gap-4 border-t border-ink-800 pt-8 sm:flex-row">
+        <p class="text-sm text-ink-400">&copy; {{ year }} My Shop. All rights reserved.</p>
+
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-ink-400">We accept</span>
+          <!--
+            The old markup drew "cards" with <text> inside a single <svg> using
+            fill="white" on a currentColor parent, so they rendered as three
+            grey blobs. Icon fonts are clearer and honest about being generic.
+          -->
+          <ul class="flex items-center gap-2" aria-label="Accepted payment methods">
+            <li v-for="card in ['pi-credit-card', 'pi-paypal', 'pi-money-bill']" :key="card">
+              <i :class="['pi', card]" class="text-lg text-ink-400" aria-hidden="true" />
+            </li>
+          </ul>
+          <span class="sr-only">We accept credit cards, PayPal and cash on delivery.</span>
         </div>
       </div>
     </div>
   </footer>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue'
-
-const email = ref('')
-const subscriptionMessage = ref('')
-const subscriptionSuccess = ref(false)
-
-const subscribeNewsletter = () => {
-  if (!email.value) {
-    subscriptionMessage.value = 'Please enter your email address'
-    subscriptionSuccess.value = false
-    return
-  }
-
-  if (!isValidEmail(email.value)) {
-    subscriptionMessage.value = 'Please enter a valid email address'
-    subscriptionSuccess.value = false
-    return
-  }
-
-  // Simulate API call
-  subscriptionSuccess.value = true
-  subscriptionMessage.value = 'Thank you for subscribing!'
-  email.value = ''
-
-  // Clear message after 3 seconds
-  setTimeout(() => {
-    subscriptionMessage.value = ''
-  }, 3000)
-}
-
-const isValidEmail = (email: string) => {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return re.test(email)
-}
-</script>

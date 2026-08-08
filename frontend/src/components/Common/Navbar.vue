@@ -1,268 +1,424 @@
-<template>
-  <nav class="bg-white shadow-md sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16">
-        
-        <!-- Logo - Left Side -->
-        <router-link to="/" class="text-xl font-bold text-gray-800 hover:text-[#00685F] transition shrink-0">
-          My Shop
-        </router-link>
-
-        <!-- Desktop Navigation - Center -->
-        <div class="hidden md:flex items-center justify-center flex-1 space-x-8">
-          <router-link to="/shop" class="text-gray-700 hover:text-[#00685F] transition font-medium" active-class="text-[#00685F]">
-            Shop
-          </router-link>
-          <router-link to="/new-arrivals" class="text-gray-700 hover:text-[#00685F] transition font-medium" active-class="text-[#00685F]">
-            New Arrivals
-          </router-link>
-          <router-link to="/collections" class="text-gray-700 hover:text-[#00685F] transition font-medium" active-class="text-[#00685F]">
-            Collection
-          </router-link>
-          <router-link to="/sale" class="text-gray-700 hover:text-blue-600 transition font-medium text-red-500" active-class="text-red-700">
-            Sale
-          </router-link>
-        </div>
-
-        <!-- Right Side - Cart & Auth (Desktop) -->
-        <div class="hidden md:flex items-center space-x-6 flex-shrink-0">
-          <!-- Cart Icon -->
-          <router-link to="/cart" class="relative text-gray-700 hover:text-[#00685F] transition">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6M17 13l1.5 6M9 21h6M12 15v6" />
-            </svg>
-            <span v-if="cartCount > 0" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {{ cartCount }}
-            </span>
-          </router-link>
-
-          <!-- ✅ Show User Avatar & Dropdown when logged in -->
-          <div v-if="authStore.isAuthenticated" class="relative" ref="dropdownRef">
-            <button 
-              @click="toggleDropdown" 
-              class="flex items-center gap-2 hover:opacity-80 transition"
-            >
-              <!-- Avatar -->
-              <div class="w-9 h-9 rounded-full bg-[#00685F] text-white flex items-center justify-center font-semibold text-sm">
-                {{ userInitials }}
-              </div>
-              <span class="text-gray-700 hidden lg:inline">{{ authStore.userName }}</span>
-              <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            <!-- Dropdown Menu -->
-            <div 
-              v-if="isDropdownOpen"
-              class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50"
-            >
-              <div class="px-4 py-3 border-b border-gray-100">
-                <p class="text-sm font-medium text-gray-900">{{ authStore.userName }}</p>
-                <p class="text-xs text-gray-500 truncate">{{ authStore.userEmail }}</p>
-              </div>
-              
-              <router-link 
-                to="/dashboard" 
-                class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
-                @click="closeDropdown"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                Dashboard
-              </router-link>
-
-              <router-link 
-                to="dashboard/customer/orders" 
-                class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
-                @click="closeDropdown"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-                My Orders
-              </router-link>
-
-              <router-link 
-                to="dashboard/customer/profile" 
-                class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
-                @click="closeDropdown"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Profile
-              </router-link>
-
-              <div class="border-t border-gray-100"></div>
-
-              <button 
-                @click="handleLogout" 
-                class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition w-full text-left"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Logout
-              </button>
-            </div>
-          </div>
-
-          <!-- ✅ Show Login/Register when logged out -->
-          <div v-else class="flex items-center gap-4">
-            <router-link to="/login" class="text-gray-700 hover:text-[#00685F] transition font-medium">
-              Login
-            </router-link>
-            <router-link to="/register" class="bg-[#00685F] text-white px-4 py-2 rounded-lg hover:bg-[#004F45] transition">
-              Sign Up
-            </router-link>
-          </div>
-        </div>
-
-        <!-- Mobile Menu Button -->
-        <button 
-          @click="mobileMenuOpen = !mobileMenuOpen" 
-          class="md:hidden text-gray-600 hover:text-[#00685F]"
-        >
-          <svg v-if="!mobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-          <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      <!-- Mobile Menu Dropdown -->
-      <div v-if="mobileMenuOpen" class="md:hidden py-4 border-t border-gray-100">
-        <div class="flex flex-col space-y-3">
-          <router-link to="/shop" @click="mobileMenuOpen = false" class="text-gray-600 hover:text-[#00685F] px-2 py-1">
-            Shop
-          </router-link>
-          <router-link to="/new-arrivals" @click="mobileMenuOpen = false" class="text-gray-600 hover:text-[#00685F] px-2 py-1">
-            New Arrivals
-          </router-link>
-          <router-link to="/collections" @click="mobileMenuOpen = false" class="text-gray-600 hover:text-[#00685F] px-2 py-1">
-            Collection
-          </router-link>
-          <router-link to="/sale" @click="mobileMenuOpen = false" class="text-gray-600 hover:text-red-500 px-2 py-1">
-            Sale
-          </router-link>
-          
-          <hr class="my-2">
-          
-          <router-link to="/cart" @click="mobileMenuOpen = false" class="text-gray-600 hover:text-[#00685F] px-2 py-1 flex items-center gap-2">
-            Cart
-            <span v-if="cartCount > 0" class="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
-              {{ cartCount }}
-            </span>
-          </router-link>
-          
-          <!-- ✅ Mobile: Show User Info when logged in -->
-          <div v-if="authStore.isAuthenticated" class="px-2 py-1">
-            <div class="flex items-center gap-3 mb-3">
-              <div class="w-10 h-10 rounded-full bg-[#00685F] text-white flex items-center justify-center font-semibold text-sm">
-                {{ userInitials }}
-              </div>
-              <div>
-                <p class="text-sm font-medium text-gray-900">{{ authStore.userName }}</p>
-                <p class="text-xs text-gray-500">{{ authStore.userEmail }}</p>
-              </div>
-            </div>
-            
-            <router-link to="dashboard" @click="mobileMenuOpen = false" class="flex items-center gap-2 text-gray-600 hover:text-[#00685F] py-1">
-              Dashboard
-            </router-link>
-            <router-link to="dashboard/customer/orders" @click="mobileMenuOpen = false" class="flex items-center gap-2 text-gray-600 hover:text-[#00685F] py-1">
-              My Orders
-            </router-link>
-            <router-link to="dashboard/customer/profile" @click="mobileMenuOpen = false" class="flex items-center gap-2 text-gray-600 hover:text-[#00685F] py-1">
-              Profile
-            </router-link>
-            
-            <button @click="handleLogout" class="flex items-center gap-2 text-red-600 hover:text-red-700 py-1 w-full text-left">
-              Logout
-            </button>
-          </div>
-
-          <!-- ✅ Mobile: Show Login/Register when logged out -->
-          <div v-else class="flex flex-col space-y-2 px-2 py-1">
-            <router-link to="/login" @click="mobileMenuOpen = false" class="text-gray-600 hover:text-[#00685F]">
-              Login
-            </router-link>
-            <router-link to="/register" @click="mobileMenuOpen = false" class="bg-[#00685F] text-white text-center px-2 py-2 rounded-lg hover:bg-[#004F45]">
-              Sign Up
-            </router-link>
-          </div>
-        </div>
-      </div>
-    </div>
-  </nav>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+/**
+ * Navbar (storefront)
+ * ---------------------------------------------------------------------------
+ * Issues fixed here:
+ *
+ * 1. BROKEN LINKS. The mobile menu used relative targets (`to="dashboard"`,
+ *    `to="dashboard/customer/orders"`). From `/product/some-slug` those
+ *    resolved to `/product/dashboard/...` and 404'd. Now all absolute.
+ * 2. WRONG LINKS BY ROLE. Every account link was hard-coded to the *customer*
+ *    dashboard, so an admin's "My Orders" sent them to a page their own guard
+ *    then bounced them out of. Links are now role-aware.
+ * 3. CONFLICTING STYLES. The "Sale" link carried `hover:text-blue-600` AND
+ *    `text-red-500` - a blue hover on a red link on a green-branded site.
+ * 4. NO GLOBAL SEARCH. Search existed only as a sidebar box inside /shop, so
+ *    finding a product from the home page took three navigations. Search is the
+ *    #1 task on a storefront; it now lives in the header on every page.
+ * 5. ACCESSIBILITY. The whole component had zero ARIA. Added: landmark +
+ *    labels, aria-expanded/controls on both toggles, a real role="menu" with
+ *    arrow-key support, Escape-to-close, focus return to the trigger, a live
+ *    region for the cart count, and body-scroll locking behind the mobile menu
+ *    (previously the page scrolled underneath the open panel).
+ */
+import { computed, onUnmounted, ref, watch, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart.store'
 import { useAuthStore } from '@/stores/auth.store'
+import { useNotify } from '@/composables/useNotify'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const cartStore = useCartStore()
+const notify = useNotify()
 
 const mobileMenuOpen = ref(false)
 const isDropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
+const dropdownTrigger = ref<HTMLButtonElement | null>(null)
+const mobilePanel = ref<HTMLElement | null>(null)
+const searchQuery = ref((route.query.search as string) ?? '')
 
-const cartCount = computed(() => cartStore.itemCount)
-
-// Get user initials for avatar
-const userInitials = computed(() => {
-  const name = authStore.userName || 'User'
-  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-})
-
-const toggleDropdown = () => {
-  isDropdownOpen.value = !isDropdownOpen.value
+/** `accent` marks the Sale link, which needs the danger tone rather than brand. */
+interface NavLink {
+  to: string
+  label: string
+  accent?: boolean
 }
 
-const closeDropdown = () => {
+const NAV_LINKS: NavLink[] = [
+  { to: '/shop', label: 'Shop' },
+  { to: '/new-arrivals', label: 'New Arrivals' },
+  { to: '/collections', label: 'Collections' },
+  { to: '/sale', label: 'Sale', accent: true },
+]
+
+const cartCount = computed(() => cartStore.itemCount || 0)
+/** A 4-digit badge used to blow the pill out of the header. */
+const cartBadge = computed(() => (cartCount.value > 99 ? '99+' : String(cartCount.value)))
+
+const userInitials = computed(() => {
+  const name = authStore.userName || 'User'
+  return name.trim().split(/\s+/).map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+})
+
+/** Role-aware account paths - previously all hard-coded to /customer. */
+const accountBase = computed(() => {
+  const role = authStore.user?.role
+  if (role === 'admin') return '/dashboard/admin'
+  if (role === 'vendor') return '/dashboard/vendor'
+  return '/dashboard/customer'
+})
+
+const accountLinks = computed(() => [
+  { to: accountBase.value, label: 'Dashboard', icon: 'pi pi-th-large' },
+  { to: `${accountBase.value}/orders`, label: 'My Orders', icon: 'pi pi-box' },
+  { to: `${accountBase.value}/profile`, label: 'Profile', icon: 'pi pi-user' },
+])
+
+// --- Search ---------------------------------------------------------------
+const submitSearch = () => {
+  const q = searchQuery.value.trim()
+  if (!q) return
+  mobileMenuOpen.value = false
+  router.push({ path: '/shop', query: { search: q } })
+}
+
+// --- Dropdown (role="menu") ----------------------------------------------
+const openDropdown = async () => {
+  isDropdownOpen.value = true
+  await nextTick()
+  dropdownRef.value?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+}
+
+const closeDropdown = (returnFocus = false) => {
   isDropdownOpen.value = false
+  if (returnFocus) dropdownTrigger.value?.focus()
+}
+
+const toggleDropdown = () => (isDropdownOpen.value ? closeDropdown() : openDropdown())
+
+/** Roving focus so the menu is operable without a mouse (WCAG 2.1.1). */
+const onMenuKeydown = (event: KeyboardEvent) => {
+  const items = Array.from(dropdownRef.value?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])
+  if (!items.length) return
+  const index = items.indexOf(document.activeElement as HTMLElement)
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    items[(index + 1) % items.length]?.focus()
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault()
+    items[(index - 1 + items.length) % items.length]?.focus()
+  } else if (event.key === 'Home') {
+    event.preventDefault()
+    items[0]?.focus()
+  } else if (event.key === 'End') {
+    event.preventDefault()
+    items[items.length - 1]?.focus()
+  }
 }
 
 const handleLogout = async () => {
   closeDropdown()
+  mobileMenuOpen.value = false
   await authStore.logout()
+  notify.success('Signed out', 'You have been logged out successfully.')
   router.push('/login')
 }
 
-// Close dropdown when clicking outside
+// --- Global listeners ----------------------------------------------------
 const handleClickOutside = (event: MouseEvent) => {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
     isDropdownOpen.value = false
   }
 }
 
-onMounted(() => {
-  cartStore.fetchCart()
-  document.addEventListener('click', handleClickOutside)
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key !== 'Escape') return
+  if (isDropdownOpen.value) closeDropdown(true)
+  if (mobileMenuOpen.value) mobileMenuOpen.value = false
+}
+
+/**
+ * Body-scroll lock. Without it the storefront scrolled behind the open mobile
+ * panel, so users "lost" the menu and tapped through to whatever slid under it.
+ */
+watch(mobileMenuOpen, (open) => {
+  document.body.style.overflow = open ? 'hidden' : ''
 })
+
+// Close chrome on navigation so a route change never leaves a panel hanging.
+watch(() => route.fullPath, () => {
+  mobileMenuOpen.value = false
+  isDropdownOpen.value = false
+})
+
+document.addEventListener('click', handleClickOutside)
+document.addEventListener('keydown', handleKeydown)
+
+/**
+ * The old component called cartStore.fetchCart() in onMounted. Because App.vue
+ * rendered this navbar on EVERY route - including /login - that fired an
+ * authenticated cart request on the login screen, which 401'd and (via the old
+ * interceptor) redirected back to /login in a loop. App.vue now hides the
+ * storefront chrome on auth/dashboard routes, and the cart is fetched lazily.
+ */
+if (!cartStore.items.length) {
+  cartStore.fetchCart().catch(() => {
+    /* A guest with no cart yet is not an error worth showing. */
+  })
+}
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('keydown', handleKeydown)
+  document.body.style.overflow = ''
 })
 </script>
 
-<style scoped>
-/* Optional: Add smooth transition for dropdown */
-.dropdown-enter-active,
-.dropdown-leave-active {
-  transition: all 0.2s ease;
-}
-.dropdown-enter-from,
-.dropdown-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-</style>
+<template>
+  <header class="sticky top-0 z-50 border-b border-ink-200 bg-white/95 backdrop-blur">
+    <nav class="page-container" aria-label="Main navigation">
+      <div class="flex h-16 items-center gap-3">
+        <!-- Logo -->
+        <router-link
+          to="/"
+          class="flex shrink-0 items-center gap-2 text-lg font-bold text-ink-900 transition hover:text-brand-700"
+        >
+          <span class="grid size-8 place-items-center rounded-lg bg-brand-600 text-white" aria-hidden="true">
+            <i class="pi pi-shopping-bag text-sm" />
+          </span>
+          <span>My Shop</span>
+        </router-link>
+
+        <!-- Primary links (desktop) -->
+        <ul class="ml-4 hidden items-center gap-1 lg:flex">
+          <li v-for="link in NAV_LINKS" :key="link.to">
+            <router-link
+              :to="link.to"
+              class="rounded-control px-3 py-2 text-sm font-medium transition"
+              :class="
+                link.accent
+                  ? 'text-danger-600 hover:bg-danger-50 hover:text-danger-700'
+                  : 'text-ink-700 hover:bg-ink-100 hover:text-brand-700'
+              "
+              :active-class="link.accent ? 'bg-danger-50 text-danger-700' : 'bg-brand-50 text-brand-700'"
+            >
+              {{ link.label }}
+            </router-link>
+          </li>
+        </ul>
+
+        <!-- Global search: the storefront had none above the /shop sidebar -->
+        <form
+          class="ml-auto hidden max-w-xs flex-1 md:block"
+          role="search"
+          @submit.prevent="submitSearch"
+        >
+          <label for="site-search" class="sr-only">Search products</label>
+          <div class="relative">
+            <i
+              class="pi pi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-400"
+              aria-hidden="true"
+            />
+            <input
+              id="site-search"
+              v-model="searchQuery"
+              type="search"
+              name="search"
+              placeholder="Search products..."
+              class="field-control !min-h-10 !py-2 pl-9 text-sm"
+              enterkeyhint="search"
+            />
+          </div>
+        </form>
+
+        <div class="ml-auto flex items-center gap-1 md:ml-0">
+          <!-- Cart -->
+          <router-link
+            to="/cart"
+            class="relative grid size-11 place-items-center rounded-control text-ink-700 transition hover:bg-ink-100 hover:text-brand-700"
+            :aria-label="`Shopping cart, ${cartCount} ${cartCount === 1 ? 'item' : 'items'}`"
+          >
+            <i class="pi pi-shopping-cart text-lg" aria-hidden="true" />
+            <span
+              v-if="cartCount > 0"
+              class="tabular absolute right-1 top-1 grid min-w-5 place-items-center rounded-full bg-danger-600 px-1 text-[0.625rem] font-bold leading-4 text-white"
+              aria-hidden="true"
+            >{{ cartBadge }}</span>
+          </router-link>
+          <!-- Announces count changes without duplicating the visual badge -->
+          <span class="sr-only" aria-live="polite">{{ cartCount }} items in cart</span>
+
+          <!-- Account menu -->
+          <div v-if="authStore.isAuthenticated" ref="dropdownRef" class="relative">
+            <button
+              ref="dropdownTrigger"
+              type="button"
+              class="flex items-center gap-2 rounded-control p-1.5 transition hover:bg-ink-100"
+              aria-haspopup="menu"
+              :aria-expanded="isDropdownOpen"
+              aria-controls="account-menu"
+              @click="toggleDropdown"
+            >
+              <span
+                class="grid size-8 place-items-center rounded-full bg-brand-600 text-xs font-semibold text-white"
+                aria-hidden="true"
+              >{{ userInitials }}</span>
+              <span class="hidden max-w-28 truncate text-sm font-medium text-ink-700 xl:inline">
+                {{ authStore.userName }}
+              </span>
+              <i class="pi pi-chevron-down text-xs text-ink-500" aria-hidden="true" />
+              <span class="sr-only">Account menu</span>
+            </button>
+
+            <Transition name="fade-slide">
+              <div
+                v-if="isDropdownOpen"
+                id="account-menu"
+                role="menu"
+                aria-label="Account"
+                class="absolute right-0 mt-2 w-60 overflow-hidden rounded-card border border-ink-200 bg-white shadow-popover"
+                @keydown="onMenuKeydown"
+              >
+                <div class="border-b border-ink-100 px-4 py-3">
+                  <p class="truncate text-sm font-semibold text-ink-900">{{ authStore.userName }}</p>
+                  <p class="truncate text-xs text-ink-500">{{ authStore.userEmail }}</p>
+                  <!-- Surfacing the role removes the "which panel am I in?" confusion -->
+                  <span class="badge badge-brand mt-1.5">{{ authStore.user?.role || 'customer' }}</span>
+                </div>
+
+                <router-link
+                  v-for="item in accountLinks"
+                  :key="item.to"
+                  :to="item.to"
+                  role="menuitem"
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-ink-700 transition hover:bg-ink-50 hover:text-brand-700"
+                  @click="closeDropdown()"
+                >
+                  <i :class="item.icon" class="w-4 text-center text-ink-500" aria-hidden="true" />
+                  {{ item.label }}
+                </router-link>
+
+                <div class="border-t border-ink-100">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-danger-700 transition hover:bg-danger-50"
+                    @click="handleLogout"
+                  >
+                    <i class="pi pi-sign-out w-4 text-center" aria-hidden="true" />
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- Guest actions -->
+          <div v-else class="hidden items-center gap-2 sm:flex">
+            <router-link to="/login" class="btn btn-ghost btn-sm">Sign in</router-link>
+            <router-link to="/register" class="btn btn-primary btn-sm">Sign up</router-link>
+          </div>
+
+          <!-- Mobile toggle -->
+          <button
+            type="button"
+            class="grid size-11 place-items-center rounded-control text-ink-700 transition hover:bg-ink-100 lg:hidden"
+            :aria-expanded="mobileMenuOpen"
+            aria-controls="mobile-menu"
+            :aria-label="mobileMenuOpen ? 'Close menu' : 'Open menu'"
+            @click="mobileMenuOpen = !mobileMenuOpen"
+          >
+            <i :class="mobileMenuOpen ? 'pi pi-times' : 'pi pi-bars'" class="text-lg" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile panel -->
+      <Transition name="fade-slide">
+        <div
+          v-if="mobileMenuOpen"
+          id="mobile-menu"
+          ref="mobilePanel"
+          class="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-ink-200 py-4 lg:hidden"
+        >
+          <!-- Search first: it is the most-used control on a small screen -->
+          <form role="search" class="mb-4 md:hidden" @submit.prevent="submitSearch">
+            <label for="site-search-mobile" class="sr-only">Search products</label>
+            <div class="relative">
+              <i
+                class="pi pi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-400"
+                aria-hidden="true"
+              />
+              <input
+                id="site-search-mobile"
+                v-model="searchQuery"
+                type="search"
+                placeholder="Search products..."
+                class="field-control pl-9"
+                enterkeyhint="search"
+              />
+            </div>
+          </form>
+
+          <ul class="space-y-1">
+            <li v-for="link in NAV_LINKS" :key="link.to">
+              <router-link
+                :to="link.to"
+                class="block rounded-control px-3 py-3 text-sm font-medium transition"
+                :class="link.accent ? 'text-danger-600 hover:bg-danger-50' : 'text-ink-700 hover:bg-ink-100'"
+                active-class="bg-brand-50 text-brand-700"
+              >
+                {{ link.label }}
+              </router-link>
+            </li>
+          </ul>
+
+          <div class="mt-4 border-t border-ink-200 pt-4">
+            <template v-if="authStore.isAuthenticated">
+              <div class="mb-3 flex items-center gap-3 px-3">
+                <span
+                  class="grid size-10 place-items-center rounded-full bg-brand-600 text-sm font-semibold text-white"
+                  aria-hidden="true"
+                >{{ userInitials }}</span>
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-ink-900">{{ authStore.userName }}</p>
+                  <p class="truncate text-xs text-ink-500">{{ authStore.userEmail }}</p>
+                </div>
+              </div>
+
+              <ul class="space-y-1">
+                <li v-for="item in accountLinks" :key="item.to">
+                  <router-link
+                    :to="item.to"
+                    class="flex items-center gap-3 rounded-control px-3 py-3 text-sm text-ink-700 transition hover:bg-ink-100"
+                  >
+                    <i :class="item.icon" class="w-4 text-center text-ink-500" aria-hidden="true" />
+                    {{ item.label }}
+                  </router-link>
+                </li>
+              </ul>
+
+              <button
+                type="button"
+                class="mt-1 flex w-full items-center gap-3 rounded-control px-3 py-3 text-left text-sm font-medium text-danger-700 transition hover:bg-danger-50"
+                @click="handleLogout"
+              >
+                <i class="pi pi-sign-out w-4 text-center" aria-hidden="true" />
+                Sign out
+              </button>
+            </template>
+
+            <div v-else class="flex flex-col gap-2 px-1">
+              <router-link to="/login" class="btn btn-secondary btn-block">Sign in</router-link>
+              <router-link to="/register" class="btn btn-primary btn-block">Create account</router-link>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </nav>
+  </header>
+</template>

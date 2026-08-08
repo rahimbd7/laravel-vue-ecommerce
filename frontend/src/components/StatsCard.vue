@@ -1,58 +1,106 @@
+<script setup lang="ts">
+/**
+ * StatsCard
+ * ---------------------------------------------------------------------------
+ * BUG FIXED (visual): the template bound `:class="borderColor"` where
+ * `borderColor` was a plain lookup OBJECT, never indexed by the `color` prop:
+ *
+ *     const borderColor = { green: 'border-green-500', blue: '...', ... }
+ *     <div :class="borderColor">
+ *
+ * Vue's object class syntax uses the KEYS as class names, so this emitted
+ * `class="green blue purple orange red yellow"` - six classes that do not
+ * exist in Tailwind. Result: the `color` prop did nothing, and every stat card
+ * on every dashboard rendered with a transparent border and a colourless icon
+ * chip. Same bug in `bgColor` and `iconColor`. Now a real computed lookup.
+ *
+ * Also added:
+ *  - `loading` skeleton, so dashboards can reserve layout instead of collapsing
+ *    to zero height and then snapping (CLS) when data lands.
+ *  - Accessible trend: the arrow glyph alone conveyed direction by shape+colour
+ *    only; it is now aria-hidden with a spoken "up/down 12.4 percent" label.
+ *  - `to` makes a card a real link when it drills into a list.
+ */
+import { computed } from 'vue'
+
+const props = withDefaults(
+  defineProps<{
+    title: string
+    value: string | number
+    icon: string
+    color?: 'green' | 'blue' | 'purple' | 'orange' | 'red' | 'yellow' | 'brand'
+    subtext?: string
+    /** Percentage change vs the previous period. */
+    trend?: number
+    trendLabel?: string
+    loading?: boolean
+    /** When set the whole card becomes a router-link. */
+    to?: string
+  }>(),
+  { color: 'brand', trendLabel: 'vs last month' },
+)
+
+/** Static maps - Tailwind must see the literal class strings to emit them. */
+const TONE = {
+  brand:  { border: 'border-l-brand-600',  chip: 'bg-brand-50',   icon: 'text-brand-700' },
+  green:  { border: 'border-l-success-500', chip: 'bg-success-50', icon: 'text-success-700' },
+  blue:   { border: 'border-l-info-500',    chip: 'bg-info-50',    icon: 'text-info-700' },
+  purple: { border: 'border-l-purple-500',  chip: 'bg-purple-50',  icon: 'text-purple-700' },
+  orange: { border: 'border-l-warning-500', chip: 'bg-warning-50', icon: 'text-warning-700' },
+  yellow: { border: 'border-l-warning-500', chip: 'bg-warning-50', icon: 'text-warning-700' },
+  red:    { border: 'border-l-danger-500',  chip: 'bg-danger-50',  icon: 'text-danger-700' },
+} as const
+
+const tone = computed(() => TONE[props.color] ?? TONE.brand)
+const isUp = computed(() => (props.trend ?? 0) >= 0)
+</script>
+
 <template>
-  <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6 border-l-4" :class="borderColor">
-    <div class="flex justify-between items-start">
-      <div>
-        <p class="text-xs sm:text-sm text-gray-600">{{ title }}</p>
-        <p class="text-xl sm:text-2xl font-bold text-gray-900">{{ value }}</p>
-        <p v-if="subtext" class="text-xs text-gray-500 mt-1">{{ subtext }}</p>
+  <!-- Skeleton mirrors the real card's box model so nothing shifts on load -->
+  <div v-if="loading" class="card border-l-4 border-l-ink-200 p-4 sm:p-5" aria-hidden="true">
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0 flex-1 space-y-2">
+        <div class="skeleton h-3 w-24"></div>
+        <div class="skeleton h-7 w-32"></div>
+        <div class="skeleton h-3 w-20"></div>
       </div>
-      <div class="p-2 sm:p-3 rounded-lg" :class="bgColor">
-       <i :class="[icon, iconColor]" class="text-lg sm:text-xl"></i>
-      </div>
-    </div>
-    <div v-if="trend !== undefined" class="mt-2 flex items-center gap-1">
-      <span :class="trend >= 0 ? 'text-green-600' : 'text-red-600'" class="text-xs font-medium">
-        {{ trend >= 0 ? '↑' : '↓' }} {{ Math.abs(trend).toFixed(1) }}%
-      </span>
-      <span class="text-xs text-gray-500">vs last month</span>
+      <div class="skeleton size-10 rounded-lg"></div>
     </div>
   </div>
+
+  <component
+    v-else
+    :is="to ? 'router-link' : 'div'"
+    :to="to"
+    class="card border-l-4 p-4 sm:p-5"
+    :class="[tone.border, to && 'card-interactive block hover:-translate-y-0.5']"
+  >
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="truncate text-xs font-medium text-ink-500 sm:text-sm">{{ title }}</p>
+        <!-- tabular-nums stops the number jittering as digits change on refresh -->
+        <p class="tabular mt-0.5 text-xl font-bold text-ink-900 sm:text-2xl">{{ value }}</p>
+        <p v-if="subtext" class="mt-1 truncate text-xs text-ink-500">{{ subtext }}</p>
+      </div>
+
+      <div class="grid size-10 shrink-0 place-items-center rounded-lg sm:size-11" :class="tone.chip">
+        <i :class="[icon, tone.icon]" class="text-lg sm:text-xl" aria-hidden="true" />
+      </div>
+    </div>
+
+    <div v-if="trend !== undefined && trend !== null" class="mt-3 flex items-center gap-1.5">
+      <span
+        class="badge"
+        :class="isUp ? 'badge-success' : 'badge-danger'"
+      >
+        <i :class="isUp ? 'pi pi-arrow-up-right' : 'pi pi-arrow-down-right'" class="text-[0.65rem]" aria-hidden="true" />
+        <span class="tabular">{{ Math.abs(trend).toFixed(1) }}%</span>
+      </span>
+      <span class="text-xs text-ink-500">{{ trendLabel }}</span>
+      <!-- Direction is conveyed by icon+colour visually; spelled out for AT -->
+      <span class="sr-only">
+        {{ isUp ? 'Increased' : 'Decreased' }} by {{ Math.abs(trend).toFixed(1) }} percent {{ trendLabel }}
+      </span>
+    </div>
+  </component>
 </template>
-
-<script setup lang="ts">
-defineProps<{
-  title: string
-  value: string | number
-  icon: string
-  color: 'green' | 'blue' | 'purple' | 'orange' | 'red' | 'yellow'
-  subtext?: string
-  trend?: number
-}>()
-
-const borderColor = {
-  green: 'border-green-500',
-  blue: 'border-blue-500',
-  purple: 'border-purple-500',
-  orange: 'border-orange-500',
-  red: 'border-red-500',
-  yellow: 'border-yellow-500',
-}
-
-const bgColor = {
-  green: 'bg-green-100',
-  blue: 'bg-blue-100',
-  purple: 'bg-purple-100',
-  orange: 'bg-orange-100',
-  red: 'bg-red-100',
-  yellow: 'bg-yellow-100',
-}
-
-const iconColor = {
-  green: 'text-green-600',
-  blue: 'text-blue-600',
-  purple: 'text-purple-600',
-  orange: 'text-orange-600',
-  red: 'text-red-600',
-  yellow: 'text-yellow-600',
-}
-</script>

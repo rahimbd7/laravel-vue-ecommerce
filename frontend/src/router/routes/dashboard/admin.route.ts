@@ -1,173 +1,137 @@
+import type { RouteRecordRaw } from "vue-router";
 import { UserRole } from "@/types/common.types";
-import CategoryIndex from "@/views/Dashboard/admin/category/CategoryIndex.vue";
-import CreateCategory from "@/views/Dashboard/admin/category/CreateCategory.vue";
-import EditCategory from "@/views/Dashboard/admin/category/EditCategory.vue";
-import SingleCategory from "@/views/Dashboard/admin/category/SingleCategory.vue";
-import AdminCouponEdit from "@/views/Dashboard/admin/coupon/AdminCouponEdit.vue";
-import AdminCouponManagement from "@/views/Dashboard/admin/coupon/AdminCouponManagement.vue";
-import AdminCreateCoupon from "@/views/Dashboard/admin/coupon/AdminCreateCoupon.vue";
-import AdminSingleCoupon from "@/views/Dashboard/admin/coupon/AdminSingleCoupon.vue";
-import Index from "@/views/Dashboard/admin/index.vue";
-import OrderDetails from "@/views/Dashboard/admin/orders/OrderDetails.vue";
-import OrderIndex from "@/views/Dashboard/admin/orders/OrderIndex.vue";
-import SingleUserOrders from "@/views/Dashboard/admin/orders/SingleUserOrders.vue";
-import AdminProductDetails from "@/views/Dashboard/admin/products/AdminProductDetails.vue";
-import AdminProductEdit from "@/views/Dashboard/admin/products/AdminProductEdit.vue";
-import AdminProductManagement from "@/views/Dashboard/admin/products/AdminProductManagement.vue";
-import UserDetails from "@/views/Dashboard/admin/users/UserDetails.vue";
-import UserIndex from "@/views/Dashboard/admin/users/UserIndex.vue";
-import UserManagement from "@/views/Dashboard/admin/users/UserManagement.vue";
 
-// Admin Dashboard Routes
-export const adminRoutes = [
+/**
+ * ADMIN ROUTES
+ * -----------------------------------------------------------------------------
+ * Every view here was statically imported at the top of this file, so the whole
+ * admin panel (~700KB of tables, charts and forms) shipped inside the entry
+ * bundle to *every* visitor, including signed-out shoppers who can never reach
+ * these pages. Now each is a real dynamic import.
+ *
+ * `meta.title` + `meta.breadcrumb` drive the document title and the shared
+ * breadcrumb trail, so deep pages such as "edit coupon" finally tell the user
+ * where they are (WCAG 2.4.2 / 2.4.8).
+ */
+const roles = { roles: [UserRole.Admin] };
+
+export const adminRoutes: RouteRecordRaw[] = [
   {
     path: "admin",
     name: "AdminDashboard",
-    component: () => Index,
-    meta: { roles: [UserRole.Admin] },
+    component: () => import("@/views/Dashboard/admin/index.vue"),
+    meta: { ...roles, title: "Admin Dashboard", breadcrumb: ["Dashboard"] },
   },
+
+  // ---- Users -------------------------------------------------------------
   {
     path: "admin/users",
     name: "AdminUsers",
-    component: () => UserIndex,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/users/UserIndex.vue"),
+    meta: { ...roles, title: "Users", breadcrumb: ["Users"] },
   },
   {
     path: "admin/users/user-management",
     name: "AdminUsersManagement",
-    component: () => UserManagement,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/users/UserManagement.vue"),
+    meta: { ...roles, title: "Manage Users", breadcrumb: ["Users", "Manage"] },
   },
   {
     path: "admin/users/:id",
     name: "AdminUsersDetail",
-    component: () => UserDetails,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/users/UserDetails.vue"),
+    meta: { ...roles, title: "User Details", breadcrumb: ["Users", "Details"] },
   },
   {
     path: "admin/users/:id/orders",
     name: "AdminUsersOrders",
-    component: () => SingleUserOrders,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/orders/SingleUserOrders.vue"),
+    meta: { ...roles, title: "User Orders", breadcrumb: ["Users", "Orders"] },
   },
+
+  // ---- Orders ------------------------------------------------------------
   {
     path: "admin/orders",
     name: "AdminOrders",
-    component: () => OrderIndex,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/orders/OrderIndex.vue"),
+    meta: { ...roles, title: "Orders", breadcrumb: ["Orders"] },
   },
   {
     path: "admin/orders/:id",
     name: "AdminOrderDetails",
-    component: () => OrderDetails,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/orders/OrderDetails.vue"),
+    meta: { ...roles, title: "Order Details", breadcrumb: ["Orders", "Details"] },
   },
+
+  // ---- Products ----------------------------------------------------------
   {
     path: "admin/products",
     name: "AdminProducts",
-    component: () => AdminProductManagement,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/products/AdminProductManagement.vue"),
+    meta: { ...roles, title: "Products", breadcrumb: ["Products"] },
   },
   {
     path: "admin/products/:id/details",
     name: "AdminProductDetails",
-    component: () => AdminProductDetails,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/products/AdminProductDetails.vue"),
+    meta: { ...roles, title: "Product Details", breadcrumb: ["Products", "Details"] },
   },
   {
     path: "admin/products/:id/edit",
     name: "AdminProductEdit",
-    component: () => AdminProductEdit,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/products/AdminProductEdit.vue"),
+    meta: { ...roles, title: "Edit Product", breadcrumb: ["Products", "Edit"] },
   },
+
+  // ---- Categories --------------------------------------------------------
   {
     path: "admin/category",
     name: "AdminCategoryView",
-    component: () => CategoryIndex,
-    meta: { roles: ["admin"] },
-  },
-  {
-    path: "admin/categories/:id/edit",
-    name: "AdminCategoryEdit",
-    component: () => EditCategory,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/category/CategoryIndex.vue"),
+    meta: { ...roles, title: "Categories", breadcrumb: ["Categories"] },
   },
   {
     path: "admin/categories/create",
     name: "AdminCategoryCreate",
-    component: () => CreateCategory,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/category/CreateCategory.vue"),
+    meta: { ...roles, title: "New Category", breadcrumb: ["Categories", "New"] },
+  },
+  {
+    path: "admin/categories/:id/edit",
+    name: "AdminCategoryEdit",
+    component: () => import("@/views/Dashboard/admin/category/EditCategory.vue"),
+    meta: { ...roles, title: "Edit Category", breadcrumb: ["Categories", "Edit"] },
   },
   {
     path: "admin/categories/:id",
     name: "ViewSingleCategory",
-    component: () => SingleCategory,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/category/SingleCategory.vue"),
+    meta: { ...roles, title: "Category", breadcrumb: ["Categories", "Details"] },
   },
+
+  // ---- Coupons -----------------------------------------------------------
   {
     path: "admin/coupons",
     name: "AdminCoupons",
-    component: () => AdminCreateCoupon,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/coupon/AdminCreateCoupon.vue"),
+    meta: { ...roles, title: "Create Coupon", breadcrumb: ["Coupons", "New"] },
   },
   {
     path: "admin/coupons/management",
     name: "AdminCouponsManagement",
-    component: () => AdminCouponManagement,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/coupon/AdminCouponManagement.vue"),
+    meta: { ...roles, title: "Manage Coupons", breadcrumb: ["Coupons"] },
   },
   {
     path: "admin/coupons/:id/edit",
     name: "AdminCouponsEdit",
-    component: () => AdminCouponEdit,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/coupon/AdminCouponEdit.vue"),
+    meta: { ...roles, title: "Edit Coupon", breadcrumb: ["Coupons", "Edit"] },
   },
   {
     path: "admin/coupons/:id",
     name: "AdminCouponsDetail",
-    component: () => AdminSingleCoupon,
-    meta: { roles: ["admin"] },
+    component: () => import("@/views/Dashboard/admin/coupon/AdminSingleCoupon.vue"),
+    meta: { ...roles, title: "Coupon Details", breadcrumb: ["Coupons", "Details"] },
   },
-  // {
-  //   path: "admin/users/vendors",
-  //   name: "AdminVendors",
-  //   component: () => import("@/views/dashboard/admin/users/Vendors.vue"),
-  //   meta: { roles: ["admin"] },
-  // },
-  // {
-  //   path: "admin/products",
-  //   name: "AdminProducts",
-  //   component: () => import("@/views/dashboard/admin/products/Index.vue"),
-  //   meta: { roles: ["admin"] },
-  // },
-  // {
-  //   path: "admin/products/create",
-  //   name: "AdminProductCreate",
-  //   component: () => import("@/views/dashboard/admin/products/Create.vue"),
-  //   meta: { roles: ["admin"] },
-  // },
-  // {
-  //   path: "admin/orders",
-  //   name: "AdminOrders",
-  //   component: () => import("@/views/dashboard/admin/orders/Index.vue"),
-  //   meta: { roles: ["admin"] },
-  // },
-  // {
-  //   path: "admin/reviews",
-  //   name: "AdminReviews",
-  //   component: () => import("@/views/dashboard/admin/reviews/Index.vue"),
-  //   meta: { roles: ["admin"] },
-  // },
-  // {
-  //   path: "admin/payments",
-  //   name: "AdminPayments",
-  //   component: () => import("@/views/dashboard/admin/payments/Index.vue"),
-  //   meta: { roles: ["admin"] },
-  // },
-  // {
-  //   path: "admin/settings",
-  //   name: "AdminSettings",
-  //   component: () => import("@/views/dashboard/admin/settings/Index.vue"),
-  //   meta: { roles: ["admin"] },
-  // },
 ];

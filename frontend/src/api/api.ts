@@ -6,100 +6,100 @@ import router from "@/router";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api",
-  withCredentials: false,  // ✅ Important: false for token-based auth
+  withCredentials: false, // token-based auth
+  // A hung request used to leave spinners running forever with no way out.
+  timeout: 20000,
   headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  }
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
 });
 
-// Request Interceptor - Add token
+/**
+ * Endpoints that are *expected* to 401 for guests. Hitting them must NOT log the
+ * user out or bounce them to /login.
+ *
+ * WHY THIS MATTERS (real bug): ProductCard called `/wishlist/check/{id}` on
+ * mount for every card. For a signed-out visitor on /shop that produced 15
+ * simultaneous 401s, and the interceptor below reacted to the first one by
+ * setting `window.location.href = '/login'`. A guest browsing the catalogue was
+ * hard-redirected to the login page for no reason.
+ */
+const GUEST_TOLERATED = [/\/wishlist\//, /\/coupons\/applied/, /\/me$/];
+
+const isGuestTolerated = (url = "") => GUEST_TOLERATED.some((re) => re.test(url));
+
+// Request Interceptor - attach credentials
 api.interceptors.request.use(
   (config) => {
     const auth = useAuthStore();
     const cart = useCartStore();
 
-    if(config.url?.includes('/login') || config.url?.includes('/register')) {
-      // Don't add token for auth routes
+    // Never leak a stale Bearer token into a login/register attempt
+    if (config.url?.includes("/login") || config.url?.includes("/register")) {
       return config;
     }
-    
-    // ✅ Add Bearer token for authenticated requests
+
     if (auth.token) {
       config.headers.Authorization = `Bearer ${auth.token}`;
     }
-    
-    // ✅ Add guest token for cart (only when not logged in)
+
+    // Guest cart continuity
     if (!auth.token && cart.guestToken) {
-      config.headers['X-Guest-Token'] = cart.guestToken;
+      config.headers["X-Guest-Token"] = cart.guestToken;
     }
-    
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor
+/**
+ * Response Interceptor - ONE handler.
+ *
+ * There used to be two `interceptors.response.use()` blocks registered on this
+ * same instance, both reacting to 401. They fought each other:
+ *   - the first called `auth.cleanState()` + `router.push('/login')` (SPA nav)
+ *   - the second called `window.location.href = '/login'` (full page reload)
+ * The reload always won, so every expired token wiped the SPA, discarded any
+ * unsaved form (including a filled-in checkout) and re-downloaded the bundle.
+ * It also double-logged every error to the console.
+ */
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const auth = useAuthStore();
     const cart = useCartStore();
+    const url: string = error.config?.url ?? "";
+    const status = error.response?.status;
 
-    if (error.response) {
-      const status = error.response.status;
-
-      switch (status) {
-        case 401:
-        case 419:
-          auth.cleanState();
-          cart.clearGuestToken();
-          if (router.currentRoute.value.path !== "/login") {
-            await router.push("/login");
-          }
-          break;
-        case 403:
-          console.error("Permission denied");
-          break;
-        case 404:
-          console.error("Resource not found");
-          break;
-        case 422:
-          // Validation error - let component handle
-          break;
-        case 500:
-          console.error("Server error");
-          break;
-      }
-    } else if (error.code === "ERR_NETWORK") {
-      console.error("Network error - server might be down");
+    if (import.meta.env.DEV) {
+      console.warn("[api]", status ?? error.code, url, error.response?.data?.message ?? error.message);
     }
-    
+
+    if (status === 401 || status === 419) {
+      // Guests are allowed to be unauthenticated on these endpoints.
+      if (isGuestTolerated(url) && !auth.token) {
+        return Promise.reject(error);
+      }
+
+      auth.cleanState();
+      cart.clearGuestToken();
+
+      const current = router.currentRoute.value;
+      if (current.path !== "/login") {
+        // `redirect` lets the login page return the user to what they were
+        // doing instead of dumping them on the home page (UX + WCAG 3.2.x
+        // predictability). SPA navigation preserves the loaded bundle.
+        await router.push({ path: "/login", query: { redirect: current.fullPath } });
+      }
+    }
+
+    // 403 / 404 / 422 / 5xx are surfaced to the caller, which shows an inline
+    // message through useNotify().apiError(). Swallowing them here was why so
+    // many failures used to appear as a spinner that never stopped.
     return Promise.reject(error);
   }
 );
 
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error('API Error:', {
-      status: error.response?.status,
-      url: error.config?.url,
-      message: error.response?.data?.message
-    })
-    
-    const authStore = useAuthStore()
-    
-    if (error.response?.status === 401 && !error.config.url?.includes('/login')) {
-      console.warn('Token expired or invalid, logging out...')
-      authStore.cleanState()
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        window.location.href = '/login'
-      }
-    }
-    
-    return Promise.reject(error)
-  }
-)
 export default api;
