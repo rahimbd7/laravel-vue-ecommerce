@@ -1,5 +1,4 @@
 <?php
-// app/Http/Requests/Product/ProductSearchRequest.php
 
 namespace App\Http\Requests\Product;
 

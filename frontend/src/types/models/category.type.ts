@@ -1,5 +1,3 @@
-// types/models/category.types.ts
-
 export interface Category {
   id: number
   uuid: string

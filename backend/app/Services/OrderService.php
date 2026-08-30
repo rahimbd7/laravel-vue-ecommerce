@@ -1,5 +1,4 @@
 <?php
-// app/Services/OrderService.php
 
 namespace App\Services;
 
@@ -30,7 +29,6 @@ class OrderService {
             $couponIds      = [];
             $couponDiscount = 0;
 
-            // ✅ Check if multiple coupons are applied
             if (! empty($data['coupon_codes']) && is_array($data['coupon_codes'])) {
                 foreach ($data['coupon_codes'] as $code) {
                     $coupon = Coupon::where('code', $code)->first();
@@ -44,7 +42,6 @@ class OrderService {
                     }
                 }
             }
-            // ✅ Fallback: single coupon
             elseif (! empty($data['coupon_code'])) {
                 $coupon = Coupon::where('code', $data['coupon_code'])->first();
                 if ($coupon && $coupon->is_available) {
@@ -84,7 +81,6 @@ class OrderService {
                 $this->updateStock($item);
             }
 
-            // ✅ Record usage for EACH coupon
             if (! empty($couponIds) && $couponDiscount > 0) {
                 $discountPerCoupon = $couponDiscount / count($couponIds);
                 foreach ($couponIds as $couponId) {
@@ -99,7 +95,6 @@ class OrderService {
                         'used_at'           => now(),
                     ]);
 
-                    // ✅ Increment usage count for each coupon
                     $coupon = Coupon::find($couponId);
                     if ($coupon) {
                         $coupon->increment('used_count');

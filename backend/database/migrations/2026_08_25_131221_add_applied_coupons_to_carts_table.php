@@ -1,5 +1,4 @@
 <?php
-// database/migrations/xxxx_xx_xx_add_applied_coupons_to_carts.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

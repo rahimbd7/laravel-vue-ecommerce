@@ -1,5 +1,3 @@
-// src/types/index.ts
-
 // Common types
 export type { ApiResponse, PaginatedResponse, Address, Metadata } from './common.types';
 

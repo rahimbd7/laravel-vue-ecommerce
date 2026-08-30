@@ -1,12 +1,4 @@
 <script setup lang="ts">
-/**
- * Checkout — UPDATED with proper payment handling
- * 
- * KEY FIXES:
- * - Card payments now redirect BEFORE order placement
- * - Added clear BDT/international card handling
- * - Fixed payment flow order
- */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart.store'

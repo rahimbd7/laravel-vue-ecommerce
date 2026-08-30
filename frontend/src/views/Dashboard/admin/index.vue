@@ -213,7 +213,6 @@ const loading = computed(() => dashboardStore.loading)
 const recentOrders = computed(() => dashboardStore.orders?.recent || [])
 const pendingVendors = computed(() => dashboardStore.vendors?.pending_list || [])
 
-// ✅ Safe data for charts (always return array)
 const revenueTrendData = computed(() => {
   if (Array.isArray(revenue.value?.trend)) {
     return revenue.value.trend

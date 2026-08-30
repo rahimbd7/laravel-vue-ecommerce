@@ -1,24 +1,4 @@
 <script setup lang="ts">
-/**
- * Shopping cart - FIXED VERSION
- * =============================================================================
- * Issues fixed:
- *
- * 1. REMOVED DUPLICATE HTML - The page had two complete layouts (page-container
- *    AND max-w-7xl). Now one clean layout.
- *
- * 2. OPTIMISTIC QUANTITY UPDATES - Changes appear instantly, debounced API calls
- *
- * 3. REMOVED SWEETALERT - Now uses useNotify composable consistently
- *
- * 4. ADDED "SAVE FOR LATER" - Feature that was in store but never surfaced
- *
- * 5. FREE SHIPPING NUDGE - Shows progress towards free shipping threshold
- *
- * 6. STOCK WARNING - Shows if items are out of stock before checkout
- *
- * 7. ONE RESPONSIVE LAYOUT - No duplicate table + card markup
- */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useCartStore } from '@/stores/cart.store'
 import { useNotify } from '@/composables/useNotify'

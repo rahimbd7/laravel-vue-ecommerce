@@ -1,4 +1,3 @@
-<!-- components/products/FeaturedProducts.vue -->
 <template>
   <section class="py-12 px-4 bg-gray-50">
     <div class="max-w-7xl mx-auto">

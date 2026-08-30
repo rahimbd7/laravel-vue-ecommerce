@@ -1,13 +1,6 @@
 import type { RouteRecordRaw } from "vue-router";
 import { UserRole } from "@/types/common.types";
 
-/**
- * VENDOR ROUTES
- * -----------------------------------------------------------------------------
- * Most of this file was already lazy, but the five coupon/order-detail views
- * were static imports, which dragged them (and everything they import) into the
- * entry bundle - defeating the lazy loading of their siblings.
- */
 const roles = { roles: [UserRole.Vendor] };
 
 export const vendorRoutes: RouteRecordRaw[] = [

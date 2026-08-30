@@ -199,12 +199,10 @@ class UserService
     $query->orderBy('created_at', 'desc');
 
     if ($all) {
-        // ✅ Return collection, not paginated
         return $query->get();
     }
 
     $perPage = $request->per_page ?? 15;
-    // ✅ Return paginated result
     return $query->paginate($perPage);
     }
 
@@ -216,7 +214,7 @@ class UserService
     return [
         'total_orders' => $user->orders()->count(),
         'total_spent' => $user->orders()->where('payment_status', 'paid')->sum('grand_total') ?? 0,
-        'total_reviews' => $user->reviews()->count() ?? 0, // ✅ Now this will work
+        'total_reviews' => $user->reviews()->count() ?? 0,
         // Or if you used 'productReviews':
         // 'total_reviews' => $user->productReviews()->count() ?? 0,
         'wishlist_count' => $user->wishlist()->count() ?? 0,

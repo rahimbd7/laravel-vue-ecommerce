@@ -12,10 +12,10 @@ class ProductImageResource extends JsonResource
             'id' => $this->id,
             'product_id' => $this->product_id,
             'urls' => [
-                'original' => $this->full_image_url,      // ✅ Handles both local and Cloudinary
-                'thumbnail' => $this->full_thumbnail_url,  // ✅ Handles both local and Cloudinary
-                'medium' => $this->full_medium_url,        // ✅ Handles both local and Cloudinary
-                'large' => $this->full_large_url,          // ✅ Handles both local and Cloudinary
+                'original' => $this->full_image_url,
+                'thumbnail' => $this->full_thumbnail_url,
+                'medium' => $this->full_medium_url,
+                'large' => $this->full_large_url,
             ],
             'is_primary' => $this->is_primary,
             'alt_text' => $this->alt_text,
@@ -27,7 +27,7 @@ class ProductImageResource extends JsonResource
             'formatted_size' => $this->when($this->file_size, function() {
                 return $this->formatBytes($this->file_size);
             }),
-            'source' => $this->cloudinary_public_id ? 'cloudinary' : 'local', // ✅ Identify image source
+            'source' => $this->cloudinary_public_id ? 'cloudinary' : 'local',
             'cloudinary_public_id' => $this->cloudinary_public_id,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

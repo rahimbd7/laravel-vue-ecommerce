@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/API/Product/ProductVariationController.php
 
 namespace App\Http\Controllers\API\Product;
 

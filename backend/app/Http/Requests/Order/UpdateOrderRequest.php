@@ -1,5 +1,4 @@
 <?php
-// app/Http/Requests/Order/UpdateOrderRequest.php
 
 namespace App\Http\Requests\Order;
 

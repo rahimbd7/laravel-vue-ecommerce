@@ -397,7 +397,6 @@ const updateWidth = () => {
   windowWidth.value = window.innerWidth
 }
 
-// ✅ Prevent navigation to edit routes - Navigation Guard
 router.beforeEach((to, from, next) => {
   // If trying to go to edit page, redirect back to current page
   if (to.path.includes('/edit') && from.path.includes('/admin/users/')) {
@@ -464,7 +463,6 @@ const statusOptions = [
 
 // ===================== HELPER FUNCTIONS =====================
 
-// ✅ Safe price formatting - handles string, number, null, undefined
 const formatPrice = (value: any): string => {
   if (value === null || value === undefined) return '0.00'
   const num = typeof value === 'string' ? parseFloat(value) : value
@@ -472,7 +470,6 @@ const formatPrice = (value: any): string => {
   return num.toFixed(2)
 }
 
-// ✅ Safe number formatting
 const formatNumber = (value: any): number => {
   if (value === null || value === undefined) return 0
   const num = typeof value === 'string' ? parseInt(value) : value
@@ -545,7 +542,6 @@ const fetchUserDetails = async () => {
   }
 }
 
-// ✅ Opens modal - NO REDIRECT
 const openEditDialog = () => {
   form.name = user.value.name || ''
   form.email = user.value.email || ''

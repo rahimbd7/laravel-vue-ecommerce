@@ -1,4 +1,3 @@
-// src/api/api.ts
 import axios from "axios";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCartStore } from "@/stores/cart.store";
@@ -7,7 +6,6 @@ import router from "@/router";
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api",
   withCredentials: false, // token-based auth
-  // A hung request used to leave spinners running forever with no way out.
   timeout: 20000,
   headers: {
     "Content-Type": "application/json",
@@ -15,16 +13,6 @@ const api = axios.create({
   },
 });
 
-/**
- * Endpoints that are *expected* to 401 for guests. Hitting them must NOT log the
- * user out or bounce them to /login.
- *
- * WHY THIS MATTERS (real bug): ProductCard called `/wishlist/check/{id}` on
- * mount for every card. For a signed-out visitor on /shop that produced 15
- * simultaneous 401s, and the interceptor below reacted to the first one by
- * setting `window.location.href = '/login'`. A guest browsing the catalogue was
- * hard-redirected to the login page for no reason.
- */
 const GUEST_TOLERATED = [/\/wishlist\//, /\/coupons\/applied/, /\/me$/];
 
 const isGuestTolerated = (url = "") => GUEST_TOLERATED.some((re) => re.test(url));

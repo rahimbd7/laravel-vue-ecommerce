@@ -1,19 +1,3 @@
-/**
- * useFormValidation
- * -----------------------------------------------------------------------------
- * Checkout validated by firing a *blocking SweetAlert per missing field*: you
- * clicked "Place Order", got a modal saying "Missing Name", dismissed it, fixed
- * the name, clicked again, got "Missing Email"... A 5-field address could take
- * five modals. That violates WCAG 3.3.1/3.3.3 (identify the error and suggest a
- * fix, in context) and is the single biggest source of checkout abandonment.
- *
- * This gives every form:
- *  - inline, per-field messages rendered next to the input
- *  - validate-on-blur, then re-validate-on-input once a field has errored
- *    (so users are never scolded while still typing)
- *  - `focusFirstError()` to move the caret and the screen reader to the problem
- *  - a live `isValid` so the submit button can explain itself
- */
 import { computed, reactive, ref, nextTick } from 'vue'
 
 export type Validator<T = any> = (value: any, form: T) => string | true

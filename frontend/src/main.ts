@@ -16,18 +16,6 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 
 import { registerToastService } from "./composables/useNotify";
 
-/**
- * BRAND CONSISTENCY
- * -----------------------------------------------------------------------------
- * PrimeVue was mounted with the stock Aura preset, whose primary ramp is BLUE.
- * Meanwhile every hand-written control used the green #00685F. The result was a
- * genuinely mixed-brand UI: green "Save" buttons next to blue PrimeVue buttons,
- * blue focus rings on green inputs, blue DataTable pagination inside green
- * dashboards, blue checkboxes, blue Tag severities.
- *
- * Re-mapping Aura's `primary` onto the brand ramp fixes ~40 dashboard views at
- * once without touching a single one of them.
- */
 const BrandPreset = definePreset(Aura, {
   semantic: {
     primary: {

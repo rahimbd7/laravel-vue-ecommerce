@@ -1,26 +1,4 @@
 <script setup lang="ts">
-/**
- * StatsCard
- * ---------------------------------------------------------------------------
- * BUG FIXED (visual): the template bound `:class="borderColor"` where
- * `borderColor` was a plain lookup OBJECT, never indexed by the `color` prop:
- *
- *     const borderColor = { green: 'border-green-500', blue: '...', ... }
- *     <div :class="borderColor">
- *
- * Vue's object class syntax uses the KEYS as class names, so this emitted
- * `class="green blue purple orange red yellow"` - six classes that do not
- * exist in Tailwind. Result: the `color` prop did nothing, and every stat card
- * on every dashboard rendered with a transparent border and a colourless icon
- * chip. Same bug in `bgColor` and `iconColor`. Now a real computed lookup.
- *
- * Also added:
- *  - `loading` skeleton, so dashboards can reserve layout instead of collapsing
- *    to zero height and then snapping (CLS) when data lands.
- *  - Accessible trend: the arrow glyph alone conveyed direction by shape+colour
- *    only; it is now aria-hidden with a spoken "up/down 12.4 percent" label.
- *  - `to` makes a card a real link when it drills into a list.
- */
 import { computed } from 'vue'
 
 const props = withDefaults(

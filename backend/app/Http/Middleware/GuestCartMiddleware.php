@@ -1,5 +1,4 @@
 <?php
-// app/Http/Middleware/GuestCartMiddleware.php
 
 namespace App\Http\Middleware;
 

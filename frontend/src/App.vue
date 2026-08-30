@@ -1,30 +1,4 @@
 <script setup lang="ts">
-/**
- * App shell
- * ---------------------------------------------------------------------------
- * The old shell was three lines:
- *
- *     <Navbar /> <RouterView /> <Footer />
- *
- * which caused several structural problems:
- *
- * 1. DOUBLE CHROME. The dashboard has its own Menubar + sidebar, so every admin
- *    and vendor page rendered TWO stacked navbars, and the marketing footer
- *    (newsletter box, social links, payment icons) appeared underneath the admin
- *    order tables.
- * 2. STOREFRONT CHROME ON THE LOGIN SCREEN. The login view is a full-height
- *    brand gradient; the shop navbar sat on top of it and the footer below,
- *    which also meant the navbar fired an authenticated cart request on /login.
- * 3. NO LANDMARKS, NO SKIP LINK. Keyboard and screen-reader users had to tab
- *    through the entire navigation on every single page (WCAG 2.4.1).
- * 4. SILENT ROUTE CHANGES. In an SPA, navigation does not reload the document,
- *    so screen readers announce nothing. Users had no confirmation that their
- *    click did anything.
- * 5. NO PENDING FEEDBACK. Now that routes are code-split, a slow connection
- *    shows a blank gap while the chunk downloads. A top progress bar covers it.
- * 6. TOASTS DID NOT WORK OUTSIDE THE DASHBOARD. <Toast> was only mounted in the
- *    dashboard layout, so wishlist/cart feedback on public pages went nowhere.
- */
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import Toast from 'primevue/toast'
@@ -125,11 +99,7 @@ const onDialogKeydown = (event: KeyboardEvent) => {
   <!-- The single main landmark, and the skip-link target. tabindex="-1" lets
        the anchor move real keyboard focus here, not just the scroll position. -->
   <main id="main-content" tabindex="-1" class="min-h-[60vh] outline-none">
-    <RouterView v-slot="{ Component }">
-      <Transition name="fade-slide" mode="out-in">
-        <component :is="Component" />
-      </Transition>
-    </RouterView>
+    <RouterView />
   </main>
 
   <Footer v-if="showStorefrontChrome" />

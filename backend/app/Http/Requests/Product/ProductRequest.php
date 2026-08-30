@@ -17,7 +17,6 @@ class ProductRequest extends FormRequest
         $productId = $this->route('product')?->id;
 
         return [
-            // 🔴 REQUIRED - User must provide
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
@@ -25,7 +24,6 @@ class ProductRequest extends FormRequest
             'stock_quantity' => 'required|integer|min:0',
             'stock_status' => 'required|in:in_stock,out_of_stock,low_stock,backorder',
 
-            // 🟡 RECOMMENDED - Nice to have
             'short_description' => 'nullable|string|max:500',
             'compare_price' => 'nullable|numeric|min:0|gt:price',
             'status' => 'required|in:active,inactive,draft',
@@ -36,14 +34,12 @@ class ProductRequest extends FormRequest
             'is_visible' => 'sometimes|boolean',
             'is_featured' => 'sometimes|boolean',
 
-            // 🟢 AUTO-GENERATED - Never required
             'slug' => 'nullable|string|max:255|unique:products,slug,' . $productId,
             'sku' => 'nullable|string|max:100|unique:products,sku,' . $productId,
             'meta_title' => 'nullable|string|max:60',
             'meta_description' => 'nullable|string|max:160',
             'meta_keywords' => 'nullable|string|max:255',
 
-            // ✅ Images - Handle both file uploads and Cloudinary URLs
             'images' => 'nullable|array',
             'images.*' => 'array', // Each image is an array
             'images.*.secure_url' => 'required_with:images|string|url',

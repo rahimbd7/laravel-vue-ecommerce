@@ -1,18 +1,6 @@
 import type { RouteRecordRaw } from "vue-router";
 import { UserRole } from "@/types/common.types";
 
-/**
- * ADMIN ROUTES
- * -----------------------------------------------------------------------------
- * Every view here was statically imported at the top of this file, so the whole
- * admin panel (~700KB of tables, charts and forms) shipped inside the entry
- * bundle to *every* visitor, including signed-out shoppers who can never reach
- * these pages. Now each is a real dynamic import.
- *
- * `meta.title` + `meta.breadcrumb` drive the document title and the shared
- * breadcrumb trail, so deep pages such as "edit coupon" finally tell the user
- * where they are (WCAG 2.4.2 / 2.4.8).
- */
 const roles = { roles: [UserRole.Admin] };
 
 export const adminRoutes: RouteRecordRaw[] = [

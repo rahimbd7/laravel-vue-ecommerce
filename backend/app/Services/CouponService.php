@@ -23,7 +23,6 @@ class CouponService {
 
         $discount = $coupon->calculateDiscount($cart);
 
-        // ✅ Add coupon to cart
         $added = $cart->addCoupon($coupon->code, $discount['discount_amount'], $coupon->id);
 
         if (! $added) {

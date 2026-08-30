@@ -1,14 +1,4 @@
 <script setup lang="ts">
-/**
- * NotFound (404)
- * ---------------------------------------------------------------------------
- * The router had no catch-all route, so any typo, stale bookmark or old
- * marketing link rendered the storefront chrome wrapped around an empty white
- * area. Users could not tell whether the app had crashed or the URL was wrong,
- * and there was no route back.
- *
- * A useful 404 answers three questions: what happened, why, and what next.
- */
 import { useRouter } from 'vue-router'
 
 const router = useRouter()

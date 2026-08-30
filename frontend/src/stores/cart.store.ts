@@ -1,4 +1,3 @@
-// src/stores/cart.store.ts
 import { defineStore } from 'pinia';
 import api from '@/api/api';
 import { useAuthStore } from './auth.store';
@@ -9,7 +8,6 @@ import type {
   AddToCartRequest 
 } from '../types';
 
-// ✅ Define AppliedCoupon interface
 interface AppliedCoupon {
   code: string;
   id?: number;
@@ -67,7 +65,6 @@ export const useCartStore = defineStore('cart', {
     totalPrice: (state): number => state.grandTotal,
     isEmpty: (state): boolean => state.itemCount === 0,
     
-    // ✅ Get total discount from all coupons
     totalDiscount: (state): number => {
       if (state.appliedCoupons && state.appliedCoupons.length > 0) {
         return state.appliedCoupons.reduce((sum, c) => sum + (c.discount || 0), 0);
@@ -75,13 +72,10 @@ export const useCartStore = defineStore('cart', {
       return state.couponDiscount || 0;
     },
     
-    // ✅ Get number of applied coupons
     couponCount: (state): number => state.appliedCoupons?.length || 0,
     
-    // ✅ Check if coupon limit is reached (max 3)
     isCouponLimitReached: (state): boolean => (state.appliedCoupons?.length || 0) >= 3,
     
-    // ✅ Get the last applied coupon code
     lastCouponCode: (state): string | null => {
       if (state.appliedCoupons && state.appliedCoupons.length > 0) {
         const last = state.appliedCoupons[state.appliedCoupons.length - 1];
@@ -113,14 +107,12 @@ export const useCartStore = defineStore('cart', {
         this.discountTotal = Number(cart.discount_total) || 0;
         this.grandTotal = Number(cart.grand_total) || 0;
         
-        // ✅ Fetch applied coupons from cart
         if (cart.applied_coupons && cart.applied_coupons.length > 0) {
           this.appliedCoupons = cart.applied_coupons;
           const total = this.appliedCoupons.reduce((sum, c) => sum + (c.discount || 0), 0);
           this.couponDiscount = total;
           this.discountTotal = total;
           
-          // ✅ Safely set couponCode
           const last = this.appliedCoupons[this.appliedCoupons.length - 1];
           this.couponCode = last?.code || null;
         } else if (cart.coupon_code) {
@@ -145,7 +137,6 @@ export const useCartStore = defineStore('cart', {
       }
     },
     
-    // ✅ Fetch applied coupons from server
     async fetchAppliedCoupons(): Promise<void> {
       try {
         const response = await api.get('/coupons/applied');
@@ -157,7 +148,6 @@ export const useCartStore = defineStore('cart', {
           this.couponDiscount = total;
           this.discountTotal = total;
           
-          // ✅ Safely update legacy fields
           if (this.appliedCoupons.length > 0) {
             const last = this.appliedCoupons[this.appliedCoupons.length - 1];
             this.couponCode = last?.code || null;
@@ -170,7 +160,6 @@ export const useCartStore = defineStore('cart', {
       }
     },
     
-    // ✅ Apply a coupon
     async applyCoupon(code: string): Promise<{ success: boolean; error?: string; data?: any }> {
       this.loading = true;
       try {
@@ -186,7 +175,6 @@ export const useCartStore = defineStore('cart', {
           this.couponDiscount = total;
           this.discountTotal = total;
           
-          // ✅ Safely update legacy fields
           if (this.appliedCoupons.length > 0) {
             const last = this.appliedCoupons[this.appliedCoupons.length - 1];
             this.couponCode = last?.code || null;
@@ -207,7 +195,6 @@ export const useCartStore = defineStore('cart', {
       }
     },
     
-    // ✅ Remove a specific coupon
     async removeCoupon(code: string): Promise<{ success: boolean; error?: string }> {
       this.loading = true;
       try {
@@ -228,7 +215,6 @@ export const useCartStore = defineStore('cart', {
       }
     },
     
-    // ✅ Clear all coupons
     async clearCoupons(): Promise<{ success: boolean; error?: string }> {
       this.loading = true;
       try {

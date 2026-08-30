@@ -10,7 +10,6 @@ class AuthService
 {
     public function register(array $data): User
     {
-        // Logic for user registration
         $data['password'] = Hash::make($data['password']);
        $user =  User::create($data);
        $user->profile()->create([]);

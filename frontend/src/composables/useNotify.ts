@@ -1,25 +1,3 @@
-/**
- * useNotify
- * -----------------------------------------------------------------------------
- * The app shipped THREE notification systems at once:
- *   1. sweetalert2          - blocking modal, used for "item added to cart"
- *   2. primevue/usetoast    - used in 37 components
- *   3. vue-toast-notification - used in 3 components
- * ...so the same event looked different depending on which file handled it, and
- * three toast stylesheets were downloaded. Worse, PrimeVue's <Toast> was only
- * mounted inside the dashboard layout, so every `toast.add()` fired from a
- * public page (e.g. ProductCard wishlist) silently vanished.
- *
- * This module is the single funnel. It routes to PrimeVue's ToastService when
- * available and degrades to console + native dialogs otherwise, so it can never
- * throw and never swallow user feedback.
- *
- * Guidance encoded here:
- *  - Toast   = non-blocking confirmation of something the user just did.
- *  - Confirm = blocking, ONLY for destructive/irreversible actions.
- * "Added to cart" used to be a blocking modal that required a click to dismiss;
- * that is a toast, and the change removes one interaction per add-to-cart.
- */
 import { ref } from 'vue'
 import type { ToastServiceMethods } from 'primevue/toastservice'
 

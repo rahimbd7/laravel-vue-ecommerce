@@ -1,19 +1,4 @@
 <script lang="ts">
-/**
- * MODULE SCOPE - shared across every card on the page.
- *
- * PERFORMANCE BUG FIXED: the old component called `/wishlist/check/{id}` from
- * its own onMounted. On /shop that is one HTTP request PER CARD - 15 requests
- * fired simultaneously, saturating the browser's 6-connection-per-host budget
- * and delaying the product images that users actually came to see.
- *
- * For signed-out visitors it was worse: all 15 returned 401, and the axios
- * interceptor reacted by redirecting to /login. Guests browsing the catalogue
- * were thrown out of the shop.
- *
- * Now: ONE `/wishlist` request per session, shared by every card, and none at
- * all for guests. 15 requests -> 1 (or 0).
- */
 import api from '@/api/api'
 
 const wishlistIds = new Set<number>()
@@ -43,29 +28,6 @@ export const wishlistCache = wishlistIds
 </script>
 
 <script setup lang="ts">
-/**
- * ProductCard
- * ---------------------------------------------------------------------------
- * Additional fixes:
- *
- * 1. LAYOUT SHIFT. `<img class="w-full h-56">` with no width/height attributes
- *    meant the grid collapsed then jumped as each image arrived. Now wrapped in
- *    a fixed 4:5 aspect-ratio box with intrinsic dimensions -> CLS ~0.
- * 2. NO LAZY LOADING. All 15 images downloaded immediately, including the ~10
- *    below the fold. `loading="lazy"` + `decoding="async"` defers them.
- * 3. UNCLICKABLE CARDS. The out-of-stock overlay was `absolute inset-0 z-10`,
- *    which sat on top of the product link AND the wishlist button (also z-10),
- *    so out-of-stock products could not be opened or saved at all. The overlay
- *    is now a non-interactive banner.
- * 4. MISSING BADGE. "Low Stock" was `v-else-if` on `is_on_sale`, so a discounted
- *    item that was nearly gone showed no stock warning - exactly the case where
- *    urgency matters most.
- * 5. WRONG STAR COUNT. `Math.floor(4.9)` rendered 4 stars for a 4.9 product.
- *    Now rounds, and the numeric rating is exposed as text (WCAG 1.4.1 - the
- *    old version conveyed rating purely through star colour).
- * 6. NO CLICK FEEDBACK. Add-to-cart had no per-card pending state, so shoppers
- *    on a slow connection clicked three times and got three units.
- */
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useNotify } from '@/composables/useNotify'

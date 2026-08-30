@@ -39,7 +39,6 @@
     <div v-else class="bg-white rounded-lg shadow-sm p-4 sm:p-6">
       <form @submit.prevent="updateCoupon" class="space-y-4 sm:space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          <!-- Code - ✅ Editable, admin enters own code -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
               Coupon Code <span class="text-red-500">*</span>
@@ -445,7 +444,6 @@ const fetchCoupon = async () => {
   }
 }
 
-// ✅ Update coupon - admin enters their own code
 const updateCoupon = async () => {
   errors.value = {}
   saving.value = true
@@ -453,7 +451,6 @@ const updateCoupon = async () => {
   try {
     const payload: any = { ...form.value }
     
-    // ✅ Convert dates to ISO string
     if (payload.starts_at) {
       payload.starts_at = payload.starts_at instanceof Date 
         ? payload.starts_at.toISOString() 

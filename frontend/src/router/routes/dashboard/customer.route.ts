@@ -1,16 +1,6 @@
 import type { RouteRecordRaw } from "vue-router";
 import { UserRole } from "@/types/common.types";
 
-/**
- * CUSTOMER ROUTES
- * -----------------------------------------------------------------------------
- * Converted from static imports to real dynamic imports (see admin.route.ts).
- *
- * Also re-enables `customer/payments`, which was commented out even though the
- * sidebar in Layout/DashBoard.vue still linked to it - clicking "Payment
- * History" navigated to a blank page because no route matched. Same for
- * `customer/coupons`, which the sidebar linked to with no route at all.
- */
 const roles = { roles: [UserRole.Customer] };
 
 export const customerRoutes: RouteRecordRaw[] = [

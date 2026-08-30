@@ -297,8 +297,8 @@ const uploading = ref(false)
 const uploadProgress = ref(0)
 const allCategories = ref<Category[]>([])
 const imagePreview = ref<string>('')
-const imageFile = ref<File | null>(null) // ✅ Store selected file
-const isNewImage = ref(false) // ✅ Track if image is new
+const imageFile = ref<File | null>(null)
+const isNewImage = ref(false)
 const errors = ref<Record<string, string[]>>({})
 
 // Form
@@ -348,14 +348,12 @@ const parentOptions = computed(() => {
     }))
 })
 
-// ✅ Helper function to find parent by UUID
 const findParentIdByUuid = (uuid: string | null): number | null => {
   if (!uuid) return null
   const parent = allCategories.value.find(c => c.uuid === uuid)
   return parent ? parent.id : null
 }
 
-// ✅ Get image preview URL
 const getImagePreview = (): string => {
   // Show new image preview if selected
   if (imageFile.value) {
@@ -374,7 +372,6 @@ const getImagePreview = (): string => {
   return ''
 }
 
-// ✅ Fetch all data in correct order
 const fetchData = async () => {
   loading.value = true
   try {
@@ -423,7 +420,6 @@ const fetchData = async () => {
   }
 }
 
-// ✅ Upload file to Cloudinary (called only on submit)
 const uploadToCloudinary = async (file: File): Promise<string | null> => {
   const formData = new FormData()
   formData.append('file', file)
@@ -457,7 +453,6 @@ const uploadToCloudinary = async (file: File): Promise<string | null> => {
   }
 }
 
-// ✅ Handle file selection - ONLY store the file, don't upload
 const onFileSelect = (event: any) => {
   const file = event.files[0]
   if (!file) return
@@ -477,7 +472,6 @@ const onFileSelect = (event: any) => {
   })
 }
 
-// ✅ Cancel new image selection
 const cancelNewImage = () => {
   imageFile.value = null
   isNewImage.value = false
@@ -506,7 +500,6 @@ const updateCategory = async () => {
   submitting.value = true
 
   try {
-    // ✅ Upload image to Cloudinary only during submit if there's a new image
     let finalImageUrl = form.value.image
     
     if (imageFile.value) {
@@ -525,7 +518,7 @@ const updateCategory = async () => {
       name: form.value.name || '',
       slug: form.value.slug || '',
       description: form.value.description || null,
-      image: finalImageUrl, // ✅ Use uploaded or existing image
+      image: finalImageUrl,
       icon: form.value.icon || null,
       parent_id: form.value.parent_id || null,
       position: form.value.position || 0,
@@ -536,12 +529,10 @@ const updateCategory = async () => {
       meta_keywords: form.value.meta_keywords || null
     }
 
-    console.log('📤 Updating category with payload:', payload)
 
     const response = await adminApi.updateCategory(categoryId, payload)
     
     if (response.data.status === 'success') {
-      // ✅ Clear the image file after successful upload
       imageFile.value = null
       isNewImage.value = false
       
@@ -554,7 +545,6 @@ const updateCategory = async () => {
       router.push('/dashboard/admin/category')
     }
   } catch (error: any) {
-    console.error('❌ Update error:', error)
     
     if (error.response?.data?.errors) {
       errors.value = error.response.data.errors
@@ -582,7 +572,6 @@ const updateCategory = async () => {
   }
 }
 
-// ✅ Lifecycle - load all data
 onMounted(() => {
   fetchData()
 })

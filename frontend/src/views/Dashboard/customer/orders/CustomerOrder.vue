@@ -1,4 +1,3 @@
-<!-- src/views/Orders/OrderList.vue -->
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Breadcrumb -->

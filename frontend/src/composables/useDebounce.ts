@@ -1,14 +1,5 @@
 import { customRef, onScopeDispose, ref, watch, type Ref } from 'vue'
 
-/**
- * useDebounce
- * -----------------------------------------------------------------------------
- * Shop.vue fired a full `/products/search` request on every single keystroke,
- * so typing "headphones" produced 10 requests and the results flickered as the
- * responses raced each other back. Every list filter in the app had the same
- * bug. These helpers fix it and always clean up their timers on unmount.
- */
-
 /** Debounce a callback. Returns the wrapped fn plus a `cancel()` escape hatch. */
 export function useDebounceFn<T extends (...args: any[]) => void>(fn: T, delay = 350) {
   let timer: ReturnType<typeof setTimeout> | undefined

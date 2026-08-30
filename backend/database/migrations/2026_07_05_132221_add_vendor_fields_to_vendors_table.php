@@ -9,9 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('vendors', function (Blueprint $table) {
-            // ✅ NEW: Add store logo column
             $table->string('store_logo')->nullable()->after('description');
-            // ✅ NEW: Add shipping settings JSON column
             $table->json('shipping_settings')->nullable()->after('commission_rate');
         });
     }

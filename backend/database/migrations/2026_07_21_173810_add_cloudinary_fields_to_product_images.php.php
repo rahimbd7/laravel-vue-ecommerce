@@ -12,7 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('product_images', function (Blueprint $table) {
-            // ✅ Add Cloudinary fields
             $table->string('cloudinary_public_id')->nullable()->after('large_url');
             $table->string('cloudinary_asset_id')->nullable()->after('cloudinary_public_id');
             $table->string('cloudinary_version')->nullable()->after('cloudinary_asset_id');
@@ -25,7 +24,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('product_images', function (Blueprint $table) {
-            // ✅ Drop Cloudinary fields
             $table->dropColumn([
                 'cloudinary_public_id',
                 'cloudinary_asset_id',

@@ -1,5 +1,4 @@
 <?php
-// app/Http/Resources/Product/ProductVariationResource.php
 
 namespace App\Http\Resources\Product;
 

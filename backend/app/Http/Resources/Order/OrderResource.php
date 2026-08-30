@@ -1,5 +1,4 @@
 <?php
-// app/Http/Resources/Order/OrderResource.php
 
 namespace App\Http\Resources\Order;
 use App\Http\Resources\Order\OrderItemResource;

@@ -1,15 +1,3 @@
-/**
- * useCurrency
- * -----------------------------------------------------------------------------
- * `formatPrice` was re-declared in 31 separate components, several of which
- * crashed on `null` (Intl.NumberFormat throws on undefined) and one of which
- * silently rendered "$NaN". This is the single implementation.
- *
- * A module-level cached Intl.NumberFormat also matters for performance: the
- * constructor is expensive and the old code built a new one on every render of
- * every table row.
- */
-
 const CURRENCY = import.meta.env.VITE_CURRENCY || 'USD'
 const LOCALE = import.meta.env.VITE_LOCALE || 'en-US'
 

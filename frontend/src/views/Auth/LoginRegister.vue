@@ -1,4 +1,3 @@
-<!-- src/views/Auth/LoginRegister.vue -->
 <template>
   <div class="min-h-screen bg-gradient-to-br from-[#00685F] to-[#004F45] flex items-center justify-center p-4">
     <div class="w-full max-w-md">

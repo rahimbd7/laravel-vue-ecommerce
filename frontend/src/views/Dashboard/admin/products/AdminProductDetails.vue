@@ -243,7 +243,6 @@ const product = ref<any>(null)
 const loading = ref(false)
 const selectedImageIndex = ref(0)
 
-// ✅ Helper function to get image URL from various formats
 const getImageUrl = (image: any, size: 'original' | 'thumbnail' | 'medium' | 'large' = 'original'): string => {
   if (!image) return ''
   
@@ -296,7 +295,6 @@ const getImageUrl = (image: any, size: 'original' | 'thumbnail' | 'medium' | 'la
   return ''
 }
 
-// ✅ Get product images array
 const getProductImages = (): any[] => {
   if (!product.value) return []
   
@@ -330,7 +328,6 @@ const getProductImages = (): any[] => {
   return []
 }
 
-// ✅ Get main image URL
 const getMainImage = (): string => {
   if (!product.value) return ''
   
@@ -349,7 +346,6 @@ const getMainImage = (): string => {
   return ''
 }
 
-// ✅ Handle image loading errors
 const handleImageError = (event: Event) => {
   const img = event.target as HTMLImageElement
   if (img) {

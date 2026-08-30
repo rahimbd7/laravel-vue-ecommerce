@@ -153,7 +153,6 @@ class AdminOrderController extends Controller
                 return $this->errorResponse('Invalid status transition', 400);
             }
 
-            // ✅ Use OrderService to update status
             $updatedOrder = $this->orderService->updateOrderStatus($order, [
                 'status' => $validated['status'],
                 'tracking_number' => $validated['tracking_number'] ?? null,
@@ -200,7 +199,6 @@ class AdminOrderController extends Controller
                 return $this->errorResponse('Order cannot be cancelled at this stage', 400);
             }
 
-            // ✅ Use OrderService to update status (which will handle stock restoration)
             $updatedOrder = $this->orderService->updateOrderStatus($order, [
                 'status' => 'cancelled',
                 'cancelled_at' => now(),

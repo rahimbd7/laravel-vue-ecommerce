@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/API/CouponController.php
 
 namespace App\Http\Controllers;
 

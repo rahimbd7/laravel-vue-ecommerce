@@ -1,5 +1,4 @@
 <?php
-// app/Http/Requests/Product/ProductReviewRequest.php
 
 namespace App\Http\Requests\Product;
 

@@ -1,4 +1,3 @@
-<!-- src/views/Orders/OrderDetail.vue -->
 <template>
   <div class="min-h-screen bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -46,7 +45,6 @@
         </div>
 
         <div class="p-6">
-          <!-- ✅ Show cancellation reason if order is cancelled -->
           <div v-if="order.status?.order === 'cancelled' && order.cancellation_reason" 
                class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
             <div class="flex items-start gap-3">
@@ -182,13 +180,11 @@ const fetchOrder = async () => {
 
 const canCancelOrder = (order: any): boolean => {
   if (!order?.status?.order) return false
-  // ✅ Hide cancel button if order is already cancelled
   if (order.status.order === 'cancelled') return false
   return ['pending', 'processing'].includes(order.status.order) && order.status.payment !== 'paid'
 }
 
 const confirmCancelOrder = async () => {
-  // ✅ Fixed: Added missing closing quote and proper HTML
   const { value: cancellationReason, isConfirmed } = await Swal.fire({
     title: 'Cancel Order?',
     html: `

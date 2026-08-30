@@ -5,13 +5,11 @@ use App\Models\Category;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-// use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CategoryService {
     public function create(array $data): Category {
         return DB::transaction(function () use ($data) {
-            // ✅ Store Cloudinary URL directly
             if (isset($data['image']) && is_string($data['image']) && filter_var($data['image'], FILTER_VALIDATE_URL)) {
                 // It's a Cloudinary URL, store it directly
                 $data['image'] = $data['image'];
@@ -90,7 +88,6 @@ class CategoryService {
                 }
             }
 
-            // ✅ Handle Cloudinary URL
             if (isset($data['image'])) {
                 // If it's a Cloudinary URL (string starting with http)
                 if (is_string($data['image']) && filter_var($data['image'], FILTER_VALIDATE_URL)) {

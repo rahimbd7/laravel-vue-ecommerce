@@ -1,4 +1,3 @@
-// stores/product.store.ts
 import { defineStore } from "pinia";
 import api from "@/api/api";
 import type { Product } from "@/types/models/product.types";
@@ -117,7 +116,6 @@ export const useProductStore = defineStore("product", {
       try {
         const response = await api.get("/v1/products", { params });
 
-        // ✅ Fix: Handle your backend response structure
         const responseData = response.data.data;
         const paginationData = responseData;
 

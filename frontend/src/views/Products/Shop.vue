@@ -1,38 +1,4 @@
 <script setup lang="ts">
-/**
- * Shop / product listing
- * ---------------------------------------------------------------------------
- * Issues fixed:
- *
- * 1. FILTERS WERE UNUSABLE ON MOBILE. The sidebar lived in a
- *    `grid-cols-1 lg:grid-cols-4` grid, so below 1024px it stacked ABOVE the
- *    products as a ~600px block. Every mobile visitor had to scroll past the
- *    entire filter panel before seeing a single product. It is now a bottom
- *    sheet behind a "Filters" button that shows the active-filter count.
- * 2. ONE API REQUEST PER KEYSTROKE. `@input="handleFilterChange"` on the search
- *    box fired a full search per character, so "headphones" = 10 requests whose
- *    responses raced each other, making results flicker between queries.
- *    Now debounced (400ms) via useDebounceFn.
- * 3. DOUBLE FETCH. handleFilterChange() called fetchProducts() AND
- *    updateRouteQuery(); the `watch(route.query)` then called fetchProducts()
- *    again. Every filter change hit the API exactly twice. The watcher now only
- *    reacts to genuinely external navigation.
- * 4. NO SKELETON. The grid was replaced by a single centred spinner, so the
- *    page collapsed to near-zero height and then snapped back on every filter
- *    tweak. Skeleton cards keep the layout stable (CLS) and communicate shape.
- * 5. INVISIBLE FILTER STATE. Nothing showed which filters were active - users
- *    got "No products found" with no idea that a stale £0-£10 range was to
- *    blame. Removable chips now summarise the active set.
- * 6. SILENT RESULTS FOR SCREEN READERS. Results changed with no announcement
- *    (WCAG 4.1.3). Added a polite live region.
- * 7. NATIVE alert() ON ADD-TO-CART FAILURE - a blocking OS dialog.
- * 8. NO PRICE VALIDATION. min > max silently returned zero results.
- * 9. DEAD WISHLIST HANDLER. `handleToggleWishlist` was a console.log TODO wired
- *    to a visible button; ProductCard now owns wishlist state properly.
- * 10. GLOBAL SCROLLBAR LEAK. A `<style scoped>` block styled
- *     `::-webkit-scrollbar`, which is not scoped by Vue and restyled the
- *     scrollbars of the entire application from this one page.
- */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ProductCard from '@/components/common/ProductCard.vue'

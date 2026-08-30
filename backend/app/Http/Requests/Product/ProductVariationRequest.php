@@ -1,5 +1,4 @@
 <?php
-// app/Http/Requests/ProductVariationRequest.php
 
 namespace App\Http\Requests\Product;
 

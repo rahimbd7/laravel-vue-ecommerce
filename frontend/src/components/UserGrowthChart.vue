@@ -19,14 +19,12 @@ const props = defineProps<{
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
 let chartInstance: Chart | null = null
 
-// ✅ Fix: Check if data is array and has values
 const hasData = computed(() => {
   if (!props.data) return false
   if (!Array.isArray(props.data)) return false
   return props.data.length > 0 && props.data.some(d => d.new_users > 0)
 })
 
-// ✅ Fix: Get valid data array
 const getChartData = () => {
   if (Array.isArray(props.data) && props.data.length > 0) {
     return props.data

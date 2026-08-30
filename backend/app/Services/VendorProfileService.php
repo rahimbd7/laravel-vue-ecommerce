@@ -54,7 +54,6 @@ class VendorProfileService
             ],
             'stats' => [
                 'total_products' => $vendor->products()->count(),
-                // ✅ REMOVED: orders() relationship - use Order::where('vendor_id', $vendor->id) instead
                 'total_orders' => \App\Models\Order::where('vendor_id', $vendor->id)->count(),
                 'total_revenue' => \App\Models\Order::where('vendor_id', $vendor->id)
                     ->where('payment_status', 'paid')
@@ -192,7 +191,6 @@ public function updateLogoFromUrl(User $user, string $logoUrl): array
 
         return [
             'total_products' => $vendor->products()->count(),
-            // ✅ REMOVED: orders() relationship - use Order::where('vendor_id', $vendor->id)
             'total_orders' => \App\Models\Order::where('vendor_id', $vendor->id)->count(),
             'pending_orders' => \App\Models\Order::where('vendor_id', $vendor->id)
                 ->where('status', 'pending')
@@ -238,7 +236,6 @@ public function updateLogoFromUrl(User $user, string $logoUrl): array
             return now()->subDays($days)->format('Y-m-d');
         });
 
-        // ✅ REMOVED: orders() relationship - use Order::where('vendor_id', $vendor->id)
         $ordersByDay = \App\Models\Order::where('vendor_id', $vendor->id)
             ->where('created_at', '>=', now()->subDays(7))
             ->selectRaw('DATE(created_at) as date, COUNT(*) as count, SUM(grand_total) as revenue')

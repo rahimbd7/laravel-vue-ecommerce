@@ -1,5 +1,4 @@
 <?php
-// app/Models/Cart.php
 
 namespace App\Models;
 
@@ -211,14 +210,12 @@ class Cart extends Model
         return true;
     }
 
-    // ✅ Get total discount
     public function getTotalDiscount()
     {
         $coupons = $this->applied_coupons ?? [];
         return array_sum(array_column($coupons, 'discount'));
     }
 
-    // ✅ Clear all coupons
     public function clearCoupons()
     {
         $this->applied_coupons = [];

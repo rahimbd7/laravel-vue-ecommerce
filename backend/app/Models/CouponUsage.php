@@ -114,7 +114,6 @@ class CouponUsage extends Model {
             ? round(($totalDiscount / $totalOriginalSubtotal) * 100, 2)
             : 0;
 
-        // ✅ Group by date (last 30 days)
         $byDate = $usages->groupBy(function ($usage) {
             return $usage->used_at->format('Y-m-d');
         })
@@ -130,7 +129,6 @@ class CouponUsage extends Model {
             ->take(30)
             ->values();
 
-        // ✅ Group by coupon
         $byCoupon = $usages->groupBy('coupon_id')
             ->map(function ($group) {
                 $coupon = $group->first()->coupon;
@@ -147,7 +145,6 @@ class CouponUsage extends Model {
             ->take(10)
             ->values();
 
-        // ✅ Group by user
         $byUser = $usages->groupBy('user_id')
             ->map(function ($group) {
                 $user = $group->first()->user;
@@ -164,7 +161,6 @@ class CouponUsage extends Model {
             ->take(10)
             ->values();
 
-        // ✅ Group by source
         $bySource = $usages->groupBy('source')
             ->map(function ($group) {
                 return [

@@ -1,22 +1,4 @@
 <script setup lang="ts">
-/**
- * AppButton
- * ---------------------------------------------------------------------------
- * Replaces ~180 hand-rolled `bg-[#00685F] text-white px-4 py-2 rounded-lg
- * hover:bg-[#004F45]` buttons. Beyond consistency it fixes three defects that
- * were repeated in nearly every view:
- *
- *  1. NO LOADING STATE - users could double-submit orders because the button
- *     stayed clickable while the request was in flight. `loading` disables it
- *     and announces progress with aria-busy + a live region.
- *  2. NO ACCESSIBLE NAME on icon-only buttons - the dashboards are full of
- *     `<Button icon="pi pi-check" />`, which a screen reader announces as just
- *     "button". `label` is always rendered, visually hidden when icon-only.
- *  3. TOUCH TARGETS under 44px (WCAG 2.5.5) - the .btn base now enforces it.
- *
- * Renders as <button>, <a> or <router-link> so navigation is never faked with
- * a button element (WCAG 4.1.2 Name, Role, Value).
- */
 import { computed } from 'vue'
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'danger-soft' | 'success'

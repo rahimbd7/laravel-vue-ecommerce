@@ -1,5 +1,4 @@
 <?php
-// database/migrations/2026_03_26_094500_add_missing_fields_to_profiles_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

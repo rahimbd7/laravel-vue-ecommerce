@@ -1,4 +1,3 @@
-// src/types/models/cart.types.ts
 import type { Address } from '../common.types';
 import type { Product, ProductVariation } from './product.types';
 

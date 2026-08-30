@@ -596,7 +596,6 @@ const getAvatarColor = (name: string): string => {
    MOBILE (below 768px)
 ========================= */
 @media (max-width: 767px) {
-  /* ✅ Hide Vendor, Payment, Date columns */
   :deep(.p-datatable .p-datatable-thead > tr > th:nth-child(2)),
   :deep(.p-datatable .p-datatable-tbody > tr > td:nth-child(2)),
   :deep(.p-datatable .p-datatable-thead > tr > th:nth-child(5)),
@@ -606,7 +605,6 @@ const getAvatarColor = (name: string): string => {
     display: none !important;
   }
   
-  /* ✅ Keep Order #, Total, Status, Actions visible */
   :deep(.p-datatable .p-datatable-thead > tr > th:nth-child(1)),
   :deep(.p-datatable .p-datatable-tbody > tr > td:nth-child(1)),
   :deep(.p-datatable .p-datatable-thead > tr > th:nth-child(3)),
@@ -657,7 +655,6 @@ const getAvatarColor = (name: string): string => {
     padding: 0.05rem 0.2rem !important;
   }
   
-  /* ✅ Sticky action column on mobile */
   :deep(.p-datatable .p-datatable-tbody > tr > td:last-child),
   :deep(.p-datatable .p-datatable-thead > tr > th:last-child) {
     position: sticky !important;

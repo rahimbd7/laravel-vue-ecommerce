@@ -1,5 +1,4 @@
 <?php
-// app/Services/ProductImageService.php
 
 namespace App\Services;
 

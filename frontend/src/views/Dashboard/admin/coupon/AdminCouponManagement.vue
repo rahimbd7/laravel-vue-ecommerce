@@ -228,12 +228,11 @@ const confirm = useConfirm()
 
 // State
 const coupons = ref<any[]>([])
-const allCoupons = ref<any[]>([]) // ✅ Store all coupons for dynamic stats
+const allCoupons = ref<any[]>([])
 const loading = ref(false)
 const first = ref(0)
 const pagination = ref<any>(null)
 
-// ✅ Computed stats - dynamically calculated from all coupons
 const stats = computed(() => {
   const all = allCoupons.value || []
   
@@ -393,7 +392,7 @@ const toggleStatus = async (coupon: any) => {
       detail: `Coupon ${coupon.is_active ? 'deactivated' : 'activated'} successfully`,
       life: 3000
     })
-    await Promise.all([fetchCoupons(), fetchAllCoupons()]) // ✅ Refresh both
+    await Promise.all([fetchCoupons(), fetchAllCoupons()])
   } catch (error: any) {
     toast.add({
       severity: 'error',
@@ -461,7 +460,6 @@ const exportCoupons = async () => {
   }
 }
 
-// ✅ Refresh all data
 const refreshAll = async () => {
   await Promise.all([fetchCoupons(), fetchAllCoupons()])
 }

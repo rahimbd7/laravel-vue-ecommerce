@@ -1,5 +1,4 @@
 <?php
-// app/Models/ProductReview.php
 
 namespace App\Models;
 

@@ -1,5 +1,4 @@
 <?php
-// database/migrations/2026_04_11_000001_add_guest_token_to_carts_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

@@ -262,7 +262,6 @@ const quantity = ref(1)
 const selectedVariation = ref<number | string>('')
 const selectedImageIndex = ref(0)
 
-// ✅ Helper function to get image URL from various formats
 const getImageUrl = (image: any, size: 'original' | 'thumbnail' | 'medium' | 'large' = 'original'): string => {
   if (!image) return ''
   
@@ -308,7 +307,6 @@ const getImageUrl = (image: any, size: 'original' | 'thumbnail' | 'medium' | 'la
   return ''
 }
 
-// ✅ Get product images array
 const getProductImages = () => {
   if (!product.value) return []
   
@@ -333,7 +331,6 @@ const getProductImages = () => {
   return []
 }
 
-// ✅ Get main image URL
 const getMainImage = (): string => {
   if (!product.value) return ''
   
@@ -352,13 +349,11 @@ const getMainImage = (): string => {
   return ''
 }
 
-// ✅ Check if an image is from Cloudinary
 const isCloudinaryImage = (url: string): boolean => {
   if (!url) return false
   return url.includes('cloudinary.com') || url.includes('res.cloudinary.com')
 }
 
-// ✅ Get optimized Cloudinary URL
 const getCloudinaryUrl = (url: string, width?: number, height?: number): string => {
   if (!url) return ''
   if (!isCloudinaryImage(url)) return url
