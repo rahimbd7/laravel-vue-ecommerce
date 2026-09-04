@@ -12,9 +12,9 @@ permissions:
   packages: write
 
 env:
-  # GHCR image prefix, e.g. ghcr.io/rahimbd7/laravel-vue-ecommerce.
-  # Re-lowercased in the docker job (GHCR requires lowercase image names).
-  GHCR_PREFIX: ghcr.io/${{ github.repository }}
+  # Docker Hub configuration
+  MY_DOCKER_USERNAME: rahimbd7  # ← CHANGE to your Docker Hub username
+  DOCKERHUB_IMAGE: ${{ secrets.MY_DOCKER_USERNAME }}/laravel-vue-ecommerce
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # 3. Docker - validate compose, build images, smoke-test the full stack,
-  #    publish to GHCR on main
+  #    publish to Docker Hub on main
   # ---------------------------------------------------------------------------
   docker:
     name: Docker build & publish
@@ -81,8 +81,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Lowercase GHCR image prefix
-        run: echo "GHCR_PREFIX=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+      - name: Set Docker Hub image name
+        run: echo "DOCKERHUB_IMAGE=${MY_DOCKER_USERNAME}/laravel-vue-ecommerce" >> "$GITHUB_ENV"
+        env:
+          MY_DOCKER_USERNAME: ${{ secrets.MY_DOCKER_USERNAME }}
 
       - name: Validate compose file
         run: docker compose config -q
@@ -116,28 +118,27 @@ jobs:
 
           docker compose down -v
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to Docker Hub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.MY_DOCKER_USERNAME }}
+          password: ${{ secrets.MY_DOCKER_PASSWORD }}
 
-      - name: Build publishable images (GHCR tags)
+      - name: Build and push images to Docker Hub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
-          BACKEND_IMAGE: ${{ env.GHCR_PREFIX }}/backend:${{ github.sha }}
-          FRONTEND_IMAGE: ${{ env.GHCR_PREFIX }}/frontend:${{ github.sha }}
-        run: docker compose build backend frontend
-
-      - name: Push images to GHCR
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          BACKEND_IMAGE: ${{ env.GHCR_PREFIX }}/backend:${{ github.sha }}
-          FRONTEND_IMAGE: ${{ env.GHCR_PREFIX }}/frontend:${{ github.sha }}
+          BACKEND_IMAGE: ${{ env.DOCKERHUB_IMAGE }}/backend:${{ github.sha }}
+          FRONTEND_IMAGE: ${{ env.DOCKERHUB_IMAGE }}/frontend:${{ github.sha }}
         run: |
+          # Build with Docker Hub tags
+          docker compose build backend frontend
+          
+          # Push with commit SHA tag
           docker compose push backend frontend
-          docker tag "${GHCR_PREFIX}/backend:${{ github.sha }}"  "${GHCR_PREFIX}/backend:latest"
-          docker tag "${GHCR_PREFIX}/frontend:${{ github.sha }}" "${GHCR_PREFIX}/frontend:latest"
-          docker push "${GHCR_PREFIX}/backend:latest" "${GHCR_PREFIX}/frontend:latest"
+          
+          # Tag as latest and push
+          docker tag "${DOCKERHUB_IMAGE}/backend:${{ github.sha }}" "${DOCKERHUB_IMAGE}/backend:latest"
+          docker tag "${DOCKERHUB_IMAGE}/frontend:${{ github.sha }}" "${DOCKERHUB_IMAGE}/frontend:latest"
+          docker push "${DOCKERHUB_IMAGE}/backend:latest"
+          docker push "${DOCKERHUB_IMAGE}/frontend:latest"
