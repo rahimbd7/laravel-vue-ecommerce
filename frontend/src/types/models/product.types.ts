@@ -1,5 +1,3 @@
-// types/models/product.types.ts
-
 // Product Price
 export interface ProductPrice {
   original: string

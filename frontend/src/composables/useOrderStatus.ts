@@ -1,17 +1,3 @@
-/**
- * useOrderStatus
- * -----------------------------------------------------------------------------
- * The status -> colour map was copy-pasted into 11 files and had already
- * drifted: `shipped` was "info" on the admin dashboard but "warning" in the
- * vendor order list, and `refunded` rendered as an invisible grey pill in one
- * place and red in another. A customer seeing two different colours for the
- * same order state loses trust in the whole app.
- *
- * It also fixes an accessibility problem: the old <Tag> only conveyed state
- * through colour (WCAG 1.4.1 Use of Colour). Every status now ships an icon
- * and a human label as well.
- */
-
 export type OrderStatus =
   | 'pending' | 'confirmed' | 'processing' | 'packed' | 'shipped'
   | 'out_for_delivery' | 'delivered' | 'completed'

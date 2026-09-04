@@ -1,12 +1,4 @@
 <script setup lang="ts">
-/**
- * Checkout — UPDATED with proper payment handling
- * 
- * KEY FIXES:
- * - Card payments now redirect BEFORE order placement
- * - Added clear BDT/international card handling
- * - Fixed payment flow order
- */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart.store'
@@ -687,11 +679,11 @@ onMounted(async () => {
                       after you confirm the order.
                     </p>
                     <p class="mt-2 text-xs text-info-700">
-                      🔒 All transactions are secured with 3D Secure authentication.
+                      All transactions are secured with 3D Secure authentication.
                     </p>
                     <!-- Added international card support info -->
                     <p class="mt-1 text-xs text-info-600">
-                      🌍 International cards accepted. Your bank may charge a foreign transaction fee.
+                      International cards accepted. Your bank may charge a foreign transaction fee.
                     </p>
                   </div>
                 </div>
@@ -799,7 +791,7 @@ onMounted(async () => {
                   </p>
                   <p class="text-sm text-ink-600">
                     {{ PAYMENT_METHODS.find((m) => m.value === form.payment_method)?.label }}
-                    {{ isCardPayment ? '🔒' : '' }}
+                    {{ isCardPayment ? '' : '' }}
                   </p>
                 </div>
                 <button type="button" class="btn btn-ghost btn-sm shrink-0" @click="goToStep(1)">Edit</button>

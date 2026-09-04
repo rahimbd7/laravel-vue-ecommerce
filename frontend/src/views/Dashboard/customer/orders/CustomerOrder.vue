@@ -1,4 +1,3 @@
-<!-- src/views/Orders/OrderList.vue -->
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Breadcrumb -->
@@ -80,7 +79,7 @@
                 <Tag :value="formatPaymentStatus(order.payment_status)" :severity="getPaymentSeverity(order.payment_status)" />
               </div>
               <router-link :to="{name: 'CustomerOrderDetails', params: {id: order.id}}" class="text-[#00685F] hover:text-[#004F45] font-medium transition">
-                View Details →
+                View Details
               </router-link>
             </div>
           </div>

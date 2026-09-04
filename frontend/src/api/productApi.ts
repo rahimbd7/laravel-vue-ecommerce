@@ -1,4 +1,3 @@
-// api/productApi.ts
 import type { Product } from '@/types/models/product.types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
@@ -30,7 +29,6 @@ export const productApi = {
 
     const result = await response.json()
     
-    // ✅ Transform the response to what the component expects
     return {
       data: result.data.data || result.data,
       pagination: {
@@ -63,7 +61,7 @@ export const productApi = {
     params.append('per_page', perPage.toString())
 
     const url = `${API_URL}/v1/products?${params.toString()}`
-    console.log('Searching products with URL:', url) // ✅ Debug log to check the final URL 
+    console.log('Searching products with URL:', url)
     const response = await fetch(url)
 
     if (!response.ok) {
@@ -72,7 +70,6 @@ export const productApi = {
 
     const result = await response.json()
     
-    // ✅ Transform the response to what the component expects
     return {
       data: result.data.data || result.data,
       pagination: {

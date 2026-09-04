@@ -1,16 +1,3 @@
-/* =============================================================================
-   DESIGN SYSTEM  -  Multi-vendor E-commerce
-   -----------------------------------------------------------------------------
-   Single source of truth for colour, type, spacing, elevation and motion.
-   Exposed to Tailwind v4 through @theme so every token becomes a first-class
-   utility (bg-brand-600, text-ink-500, shadow-card, rounded-card ...).
-
-   WHY: before this file the hex #00685F was hard-coded 341 times across 61
-   files. Re-branding was impossible and the palette had already drifted -
-   three different greens, blue focus rings on a green brand, blue selected
-   states inside green-bordered tiles.
-   ========================================================================== */
-
 @theme {
   /* ---------------------------------------------------------------------------
      BRAND - ramp built around the primary #00685F, parked at 600 so existing

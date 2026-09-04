@@ -75,7 +75,7 @@
           <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex justify-between items-center">
             <h3 class="font-semibold text-gray-900 text-sm sm:text-base">Recent Orders</h3>
             <router-link to="/dashboard/admin/orders" class="text-xs sm:text-sm text-[#00685F] hover:text-[#004F45]">
-              View All →
+              View All
             </router-link>
           </div>
           <div class="overflow-x-auto">
@@ -115,7 +115,7 @@
           <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex justify-between items-center">
             <h3 class="font-semibold text-gray-900 text-sm sm:text-base">Pending Vendor Approvals</h3>
             <router-link to="/dashboard/admin/vendors" class="text-xs sm:text-sm text-[#00685F] hover:text-[#004F45]">
-              View All →
+              View All
             </router-link>
           </div>
           <div class="overflow-x-auto">
@@ -213,7 +213,6 @@ const loading = computed(() => dashboardStore.loading)
 const recentOrders = computed(() => dashboardStore.orders?.recent || [])
 const pendingVendors = computed(() => dashboardStore.vendors?.pending_list || [])
 
-// ✅ Safe data for charts (always return array)
 const revenueTrendData = computed(() => {
   if (Array.isArray(revenue.value?.trend)) {
     return revenue.value.trend

@@ -1,5 +1,3 @@
-// src/types/common.types.ts
-
 // API Response wrapper
 export interface ApiResponse<T = any> {
   status: 'success' | 'error';

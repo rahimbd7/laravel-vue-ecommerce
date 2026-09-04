@@ -1,26 +1,4 @@
 <script setup lang="ts">
-/**
- * Navbar (storefront)
- * ---------------------------------------------------------------------------
- * Issues fixed here:
- *
- * 1. BROKEN LINKS. The mobile menu used relative targets (`to="dashboard"`,
- *    `to="dashboard/customer/orders"`). From `/product/some-slug` those
- *    resolved to `/product/dashboard/...` and 404'd. Now all absolute.
- * 2. WRONG LINKS BY ROLE. Every account link was hard-coded to the *customer*
- *    dashboard, so an admin's "My Orders" sent them to a page their own guard
- *    then bounced them out of. Links are now role-aware.
- * 3. CONFLICTING STYLES. The "Sale" link carried `hover:text-blue-600` AND
- *    `text-red-500` - a blue hover on a red link on a green-branded site.
- * 4. NO GLOBAL SEARCH. Search existed only as a sidebar box inside /shop, so
- *    finding a product from the home page took three navigations. Search is the
- *    #1 task on a storefront; it now lives in the header on every page.
- * 5. ACCESSIBILITY. The whole component had zero ARIA. Added: landmark +
- *    labels, aria-expanded/controls on both toggles, a real role="menu" with
- *    arrow-key support, Escape-to-close, focus return to the trigger, a live
- *    region for the cart count, and body-scroll locking behind the mobile menu
- *    (previously the page scrolled underneath the open panel).
- */
 import { computed, onUnmounted, ref, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart.store'

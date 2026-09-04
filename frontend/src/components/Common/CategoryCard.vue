@@ -30,7 +30,7 @@ defineEmits<{
 }>()
 
 const navigateToCategory = () => {
-   console.log('Navigating to category:', props.category.id) // ✅ Debug log to check the category being navigated to
+   console.log('Navigating to category:', props.category.id)
   router.push({
     path: '/shop',
     query: {

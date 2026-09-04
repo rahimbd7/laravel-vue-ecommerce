@@ -264,7 +264,6 @@ const formatDate = (date: Date | null): string | null => {
   return `${year}-${month}-${day}`
 }
 
-// ✅ Upload avatar to Cloudinary (only called on submit)
 const uploadToCloudinary = async (file: File): Promise<string | null> => {
   const formData = new FormData()
   formData.append('file', file)
@@ -331,7 +330,6 @@ const triggerFileInput = () => {
   fileInput.value?.click()
 }
 
-// ✅ Handle file selection - ONLY store the file, don't upload
 const onFileSelect = (event: Event) => {
   const input = event.target as HTMLInputElement
   if (input.files && input.files[0]) {
@@ -397,7 +395,6 @@ const updateProfile = async () => {
   try {
     let avatarUrl = form.value.avatar
 
-    // ✅ Upload avatar to Cloudinary only if a new file is selected
     if (avatarFile.value) {
       uploading.value = true
       uploadProgress.value = 0

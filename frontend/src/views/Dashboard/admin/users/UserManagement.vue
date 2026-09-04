@@ -460,7 +460,6 @@ const router = useRouter()
 const toast = useToast()
 const confirm = useConfirm()
 
-// ✅ Responsive window width
 const windowWidth = ref(window.innerWidth)
 
 const updateWidth = () => {

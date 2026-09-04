@@ -1,25 +1,4 @@
 <script setup lang="ts">
-/**
- * Footer
- * ---------------------------------------------------------------------------
- * Issues fixed:
- *
- * 1. COLOUR CONTRAST FAILURE. Every link used `hover:text-[#00685F]` on the
- *    `bg-gray-900` footer. Brand green on ink-900 measures 2.66:1 - far below
- *    the 4.5:1 WCAG 1.4.3 minimum, so hovering a link made it *harder* to read.
- *    Swapped to brand-300 (8.0:1, passes AAA).
- * 2. NEWSLETTER WAS NOT A FORM. An input plus a click handler means Enter did
- *    nothing, browsers offered no email autofill, and the "success" message was
- *    invisible to screen readers. It is now a real <form> with a live region.
- * 3. FAKE SUCCESS. `subscribeNewsletter` set "Thank you for subscribing!" with
- *    a comment saying "Simulate API call" - it never called anything. Marked
- *    explicitly as pending integration and no longer claims success outright.
- * 4. NO LANDMARK OR HEADINGS STRUCTURE. Link groups were bare divs; they are
- *    now labelled <nav> regions so screen-reader users can jump between them.
- * 5. UNLABELLED SOCIAL ICONS. Four <a> elements containing only an SVG, which
- *    AT announced as "link, link, link, link".
- * 6. HARD-CODED YEAR. The copyright said 2024 forever.
- */
 import { computed, ref } from 'vue'
 
 const email = ref('')
@@ -213,4 +192,3 @@ const subscribe = async () => {
     </div>
   </footer>
 </template>
-

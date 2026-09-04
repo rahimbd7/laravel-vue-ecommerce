@@ -280,7 +280,7 @@ const uploading = ref(false)
 const uploadProgress = ref(0)
 const allCategories = ref<Category[]>([])
 const imagePreview = ref<string>('')
-const imageFile = ref<File | null>(null) // ✅ Store selected file
+const imageFile = ref<File | null>(null)
 const errors = ref<Record<string, string[]>>({})
 
 // Form
@@ -335,7 +335,6 @@ const fetchAllCategories = async () => {
   }
 }
 
-// ✅ Generate slug from name
 const generateSlugFromName = () => {
   if (!form.value.slug || form.value.slug === '') {
     form.value.slug = form.value.name
@@ -345,7 +344,6 @@ const generateSlugFromName = () => {
   }
 }
 
-// ✅ Upload file to Cloudinary (called only on submit)
 const uploadToCloudinary = async (file: File): Promise<string | null> => {
   const formData = new FormData()
   formData.append('file', file)
@@ -379,7 +377,6 @@ const uploadToCloudinary = async (file: File): Promise<string | null> => {
   }
 }
 
-// ✅ Handle file selection - ONLY store the file, don't upload
 const onFileSelect = (event: any) => {
   const file = event.files[0]
   if (!file) return
@@ -422,7 +419,6 @@ const createCategory = async () => {
   submitting.value = true
 
   try {
-    // ✅ Upload image to Cloudinary only during submit if there's a new image
     let finalImageUrl = form.value.image
     
     if (imageFile.value) {
@@ -441,7 +437,7 @@ const createCategory = async () => {
       name: form.value.name || '',
       slug: form.value.slug || '',
       description: form.value.description || null,
-      image: finalImageUrl, // ✅ Use uploaded or null
+      image: finalImageUrl,
       icon: form.value.icon || null,
       parent_id: form.value.parent_id || null,
       position: form.value.position || 0,
@@ -452,12 +448,11 @@ const createCategory = async () => {
       meta_keywords: form.value.meta_keywords || null
     }
 
-    console.log('📤 Creating category with payload:', payload)
+    console.log('Creating category with payload:', payload)
 
     const response = await adminApi.createCategory(payload)
     
     if (response.data.status === 'success') {
-      // ✅ Clear the image file after successful upload
       imageFile.value = null
       
       toast.add({
@@ -469,7 +464,7 @@ const createCategory = async () => {
       router.push('/dashboard/admin/category')
     }
   } catch (error: any) {
-    console.error('❌ Create error:', error)
+    console.error('Create error:', error)
     
     if (error.response?.data?.errors) {
       errors.value = error.response.data.errors

@@ -675,7 +675,6 @@ const getPaymentSeverity = (status: string): string => {
   padding: 0.1rem 0.4rem !important;
 }
 
-/* ✅ Sticky action column on mobile */
 @media (max-width: 640px) {
   :deep(.p-datatable .p-datatable-thead > tr > th:last-child),
   :deep(.p-datatable .p-datatable-tbody > tr > td:last-child) {

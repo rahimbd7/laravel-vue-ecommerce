@@ -1,19 +1,4 @@
 <script setup lang="ts">
-/**
- * ProgressSteps
- * ---------------------------------------------------------------------------
- * Built for checkout, which was previously ONE ~2,000px-tall scroll containing
- * eight unlabelled cards. Shoppers had no idea how much was left, which is one
- * of the best-documented causes of checkout abandonment. A stepper answers
- * "where am I / how many left / can I go back" at a glance.
- *
- * Accessibility:
- *  - an ordered list, so AT announces "step 2 of 4";
- *  - aria-current="step" marks the active item (WCAG 2.4.8 Location);
- *  - completed steps are real buttons, so keyboard users can jump back;
- *  - state is never colour-only - completed shows a tick, current shows a ring
- *    and bold text (WCAG 1.4.1).
- */
 const props = defineProps<{
   steps: { key: string; label: string }[]
   /** 0-based index of the active step. */

@@ -27,7 +27,7 @@
           <span class="text-sm">{{ order.order_number }}</span>
           <span class="text-sm font-medium">{{ formatPrice(order.grand_total) }}</span>
         </div>
-        <router-link to="/dashboard/customer/orders" class="text-sm text-[#00685F] hover:text-[#004F45] mt-4 inline-block">View All →</router-link>
+        <router-link to="/dashboard/customer/orders" class="text-sm text-[#00685F] hover:text-[#004F45] mt-4 inline-block">View All</router-link>
       </div>
       <div class="bg-white rounded-lg shadow-sm p-6">
         <h3 class="font-semibold text-gray-900 mb-4">Quick Actions</h3>

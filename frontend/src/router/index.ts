@@ -50,38 +50,30 @@ const router = createRouter({
   },
 });
 
-// ============================================================
-// ✅ FIXED: Navigation guards using RETURN values (not next())
-// ============================================================
-
+// Global navigation guard
 router.beforeEach((to, _from) => {
   const authStore = useAuthStore();
   const isAuthenticated = authStore.isAuthenticated || !!localStorage.getItem("token");
   const role = authStore.user?.role as string | undefined;
 
-  // ✅ Redirect to login if auth required
   if (to.meta.requiresAuth && !isAuthenticated) {
     return { path: "/login", query: { redirect: to.fullPath } };
   }
 
-  // ✅ Redirect authenticated users away from guest pages
   if (to.meta.guest && isAuthenticated) {
     return ROLE_HOME[role ?? ""] || "/";
   }
 
-  // ✅ Redirect /dashboard to role-specific dashboard
   if (to.path === "/dashboard" && isAuthenticated) {
     return ROLE_HOME[role ?? ""] || "/";
   }
 
-  // ✅ Check role-based access
   if (to.meta.roles?.length && isAuthenticated) {
     if (!role || !to.meta.roles.includes(role)) {
       return ROLE_HOME[role ?? ""] || "/";
     }
   }
 
-  // ✅ Allow navigation
   return true;
 });
 

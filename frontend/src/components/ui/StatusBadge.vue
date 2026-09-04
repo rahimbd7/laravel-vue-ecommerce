@@ -1,16 +1,4 @@
 <script setup lang="ts">
-/**
- * StatusBadge
- * ---------------------------------------------------------------------------
- * Replaces `<Tag :value="order.status" :severity="getStatusSeverity(...)" />`,
- * which appeared in 11 views with 11 slightly different colour maps - the same
- * order read "shipped = blue" on the admin dashboard and "shipped = orange" in
- * the vendor list. Seeing two colours for one state destroys trust.
- *
- * Accessibility: the old Tag printed the raw enum (`out_for_delivery`) and
- * conveyed meaning through colour alone, failing WCAG 1.4.1. This renders a
- * human label plus an icon, so the state survives greyscale and colour-blindness.
- */
 import { computed } from 'vue'
 import { orderStatusMeta, paymentStatusMeta } from '@/composables/useOrderStatus'
 

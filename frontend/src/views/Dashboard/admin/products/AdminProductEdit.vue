@@ -240,7 +240,6 @@ const loading = ref(false)
 const saving = ref(false)
 const errors = ref<Record<string, string>>({})
 
-// ✅ Only admin-editable fields
 const form = reactive({
   category_id: null as number | null,
   stock_status: '',
@@ -309,7 +308,6 @@ const saveProduct = async () => {
   saving.value = true
 
   try {
-    // ✅ Only send fields admin is allowed to update
     const payload = {
       category_id: form.category_id,
       stock_status: form.stock_status,

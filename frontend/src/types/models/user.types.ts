@@ -1,5 +1,3 @@
-// src/types/models/user.types.ts
-
 export interface User {
   id: number;
   uuid: string;

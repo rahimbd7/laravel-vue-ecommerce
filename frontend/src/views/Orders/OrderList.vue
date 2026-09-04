@@ -1,4 +1,3 @@
-<!-- src/views/Orders/OrderList.vue -->
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Breadcrumb -->
@@ -79,7 +78,7 @@
                 </span>
               </div>
               <router-link :to="`/order/${order.id}`" class="text-[#00685F] hover:text-[#004F45] font-medium transition">
-                View Details →
+                View Details
               </router-link>
             </div>
           </div>

@@ -27,7 +27,7 @@
     <div class="bg-white rounded-lg shadow-sm overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
         <h3 class="font-semibold text-gray-900">Recent Orders</h3>
-        <router-link to="/dashboard/admin/orders" class="text-sm text-[#00685F] hover:text-[#004F45]">View All →</router-link>
+        <router-link to="/dashboard/admin/orders" class="text-sm text-[#00685F] hover:text-[#004F45]">View All</router-link>
       </div>
       <DataTable :value="recentOrders" class="p-datatable-sm">
         <Column field="order_number" header="Order #" />

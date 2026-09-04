@@ -1,21 +1,4 @@
 <script setup lang="ts">
-/**
- * EmptyState
- * ---------------------------------------------------------------------------
- * The app had ~20 hand-written empty states of wildly different quality. Most
- * were a single grey line in a table cell ("No recent orders", "No products
- * sold yet") which reads as though the page failed. Several tables had none at
- * all, so an empty result set rendered as a bare header row.
- *
- * A good empty state does three things, which this component enforces by having
- * slots/props for each:
- *   1. confirms nothing is broken,
- *   2. explains why it is empty,
- *   3. offers the single next action.
- *
- * `variant="error"` reuses the same shape for failure states so users get a
- * consistent structure whether a list is empty or a request failed.
- */
 withDefaults(
   defineProps<{
     icon?: string

@@ -1,17 +1,4 @@
 <script setup lang="ts">
-/**
- * AppInput
- * ---------------------------------------------------------------------------
- * Every field in the app was a bare label + input with NO for/id pairing, no
- * error slot, and no way for assistive tech to know it was required or invalid.
- *
- * Fixes, WCAG-mapped:
- *  - 1.3.1 / 3.3.2  a real <label for> gives the field a programmatic name.
- *  - 3.3.1  aria-invalid + aria-describedby wire the message to the field, so it
- *    is announced on focus instead of being red text only sighted users notice.
- *  - 1.4.1  the error carries an icon and text, not colour alone.
- *  - 2.5.3  the asterisk is decorative; "(required)" is exposed to AT instead.
- */
 import { computed, ref, useId } from 'vue'
 
 const props = withDefaults(
