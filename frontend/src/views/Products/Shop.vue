@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import ProductCard from '@/components/common/ProductCard.vue'
+import ProductCard from '@/components/Common/ProductCard.vue'
 import { productApi } from '@/api/productApi'
 import { useCartStore } from '@/stores/cart.store'
 import { useDebounceFn } from '@/composables/useDebounce'

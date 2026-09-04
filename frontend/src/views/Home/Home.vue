@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import Carousel from '@/components/common/Carousel.vue';
-import CategorySection from '@/components/common/CategorySection.vue'
-import FeaturedProducts from '@/components/common/FeaturedProducts.vue';
+import Carousel from '@/components/Common/Carousel.vue';
+import CategorySection from '@/components/Common/CategorySection.vue'
+import FeaturedProducts from '@/components/Common/FeaturedProducts.vue';
 
 
 

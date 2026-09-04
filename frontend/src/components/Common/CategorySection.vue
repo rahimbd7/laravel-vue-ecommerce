@@ -38,7 +38,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useCategoryStore } from '@/stores/category.store'
-import CategoryCard from '@/components/common/CategoryCard.vue'
+import CategoryCard from '@/components/Common/CategoryCard.vue'
 import type { Category } from '@/types'
 
 const categoryStore = useCategoryStore()

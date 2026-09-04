@@ -2,8 +2,8 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import Toast from 'primevue/toast'
-import Navbar from './components/common/Navbar.vue'
-import Footer from './components/common/Footer.vue'
+import Navbar from './components/Common/Navbar.vue'
+import Footer from './components/Common/Footer.vue'
 import { pendingConfirm } from './composables/useNotify'
 
 const route = useRoute()
