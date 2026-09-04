@@ -65,7 +65,16 @@ const authStore = useAuthStore()
 const userName = computed(() => authStore.user?.name || 'Admin')
 
 const stats = ref({ revenue: 0, orders: 0, customers: 0, products: 0 })
-const recentOrders = ref([])
+
+interface RecentOrder {
+  id: number
+  order_number: string
+  customer_name: string
+  grand_total: number
+  status: string
+}
+
+const recentOrders = ref<RecentOrder[]>([])
 
 const fetchData = async () => {
   // Simulate API call - replace with actual API

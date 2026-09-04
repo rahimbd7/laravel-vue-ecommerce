@@ -38,11 +38,19 @@ export default defineConfig({
      */
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['vue', 'vue-router', 'pinia', 'pinia-plugin-persistedstate', 'axios'],
-          charts: ['chart.js', 'vue-chartjs'],
-          primevue: ['primevue/config', 'primevue/toastservice', 'primevue/confirmationservice'],
-          forms: ['@formkit/vue'],
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+
+          if (id.includes('chart.js') || id.includes('vue-chartjs')) return 'charts'
+          if (id.includes('primevue')) return 'primevue'
+          if (id.includes('@formkit')) return 'forms'
+          if (
+            id.includes('/vue/') ||
+            id.includes('/vue-router/') ||
+            id.includes('/pinia/') ||
+            id.includes('/pinia-plugin-persistedstate/') ||
+            id.includes('/axios/')
+          ) return 'vendor'
         },
       },
     },

@@ -88,7 +88,7 @@ class UserService
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
                 'role' => $data['role'],
-                'email_verified_at' => $emailVerifiedAt
+                'email_verified_at' => $emailVerifiedAt,
             ]);
 
             return $user;

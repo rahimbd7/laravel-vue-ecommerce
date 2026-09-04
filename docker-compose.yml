@@ -1,0 +1,135 @@
+# =============================================================================
+# Laravel (API) + Vue (SPA) + MySQL - local development stack
+#
+#   docker compose up --build
+#
+#   Frontend (Vue SPA)  ->  http://localhost:5173
+#   Backend  (API)      ->  http://localhost:8000/api/...
+#   phpMyAdmin          ->  http://localhost:8080
+#   MySQL               ->  localhost:3306  (db: ecommerce, user: laravel, pass: secret)
+#
+# Every piece of data you create from the frontend (products, orders, users...)
+# goes through the backend API into MySQL, whose files live in the named
+# volume `db_data` - so the data survives `docker compose down` and restarts.
+# Files the backend writes to its storage disk live in `backend_storage`.
+# =============================================================================
+
+name: laravel-vue-ecommerce
+
+# Environment shared by the backend + queue worker containers
+x-backend-environment: &backend-environment
+  APP_NAME: "${APP_NAME:-Laravel Vue Ecommerce}"
+  APP_ENV: "${APP_ENV:-local}"
+  APP_DEBUG: "${APP_DEBUG:-true}"
+  APP_URL: "${APP_URL:-http://localhost:8000}"
+  # Optional: pin the key so sessions/tokens survive container rebuilds.
+  # Generate one with: docker compose exec backend php artisan key:generate --show
+  # APP_KEY: "base64:xxxxxxxxxxxxxxxxxxxx"
+  DB_CONNECTION: mysql
+  DB_HOST: mysql
+  DB_PORT: "3306"
+  DB_DATABASE: "${MYSQL_DATABASE:-ecommerce}"
+  DB_USERNAME: "${DB_USERNAME:-laravel}"
+  DB_PASSWORD: "${DB_PASSWORD:-secret}"
+  SESSION_DRIVER: database
+  QUEUE_CONNECTION: database
+  CACHE_STORE: database
+
+services:
+  # ---------------------------------------------------------------------------
+  # MySQL - all application data is persisted in the `db_data` volume
+  # ---------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: lve-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-ecommerce}"
+      MYSQL_USER: "${DB_USERNAME:-laravel}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-secret}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-root_secret}"
+    ports:
+      - "3307:3306"
+     # - "${MYSQL_PORT:-3306}:3306" # host access for GUI clients (change if 3306 is taken)
+    volumes:
+      - db_data:/var/lib/mysql # <- the database volume
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Backend - Laravel 12 API (image built from ./backend/Dockerfile)
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+    image: ${BACKEND_IMAGE:-laravel-vue-ecommerce/backend:local}
+    container_name: lve-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment: *backend-environment
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - backend_storage:/var/www/html/storage # <- uploaded files persist here
+
+  # ---------------------------------------------------------------------------
+  # Queue worker - processes database-queued jobs (reuses the backend image)
+  # ---------------------------------------------------------------------------
+  queue:
+    image: ${BACKEND_IMAGE:-laravel-vue-ecommerce/backend:local}
+    container_name: lve-queue
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "--tries=3"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment: *backend-environment
+    volumes:
+      - backend_storage:/var/www/html/storage
+
+  # ---------------------------------------------------------------------------
+  # Frontend - Vue 3 SPA served by nginx (image built from ./frontend/Dockerfile)
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: "${VITE_API_URL:-http://localhost:8000/api}"
+        VITE_CLOUDINARY_CLOUD_NAME: "${VITE_CLOUDINARY_CLOUD_NAME:-dqhf9ljat}"
+        VITE_CLOUDINARY_PRODUCT_PRESET: "${VITE_CLOUDINARY_PRODUCT_PRESET:-product_preset}"
+        VITE_CLOUDINARY_CATEGORY_PRESET: "${VITE_CLOUDINARY_CATEGORY_PRESET:-category_preset}"
+        VITE_CLOUDINARY_PROFILE_PRESET: "${VITE_CLOUDINARY_PROFILE_PRESET:-profile_preset}"
+    image: ${FRONTEND_IMAGE:-laravel-vue-ecommerce/frontend:local}
+    container_name: lve-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+
+  # ---------------------------------------------------------------------------
+  # phpMyAdmin - GUI to inspect the MySQL volume data (http://localhost:8080)
+  # ---------------------------------------------------------------------------
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    container_name: lve-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: "3306"
+      UPLOAD_LIMIT: 100M
+    ports:
+      - "${PHPMYADMIN_PORT:-8081}:80"
+
+volumes:
+  db_data: # MySQL data files   -> survives down/restart/rebuild
+  backend_storage: # Laravel storage/  -> uploaded images persist

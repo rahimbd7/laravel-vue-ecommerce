@@ -103,7 +103,7 @@ export function useCloudinaryUpload() {
     size: 'thumbnail' | 'medium' | 'large' = 'medium'
   ): string => {
     const config = CLOUDINARY_CONFIG[configType]
-    const transform = config.transformations[size]
+    const transform = config.transformations[size as keyof typeof config.transformations]
     
     if (!transform) {
       return `https://res.cloudinary.com/${config.cloudName}/image/upload/${publicId}`

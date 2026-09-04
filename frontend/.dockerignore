@@ -1,0 +1,12 @@
+.git
+.github
+.vscode
+docs
+node_modules
+dist
+.env
+.env.*
+*.local
+npm-debug.log*
+yarn-error.log*
+bun.lock
