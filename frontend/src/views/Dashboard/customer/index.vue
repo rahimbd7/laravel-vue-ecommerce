@@ -52,7 +52,14 @@ const authStore = useAuthStore()
 const userName = computed(() => authStore.user?.name || 'Customer')
 
 const stats = ref({ totalOrders: 12, totalSpent: 450.75, wishlistItems: 5 })
-const recentOrders = ref([])
+
+interface RecentOrder {
+  id: number
+  order_number: string
+  grand_total: number
+}
+
+const recentOrders = ref<RecentOrder[]>([])
 
 const formatPrice = (price: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price)
 

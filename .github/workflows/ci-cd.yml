@@ -1,0 +1,144 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  # Docker Hub configuration
+  MY_DOCKER_USERNAME: rahimbd7  # ← CHANGE to your Docker Hub username
+  DOCKERHUB_IMAGE: ${{ secrets.MY_DOCKER_USERNAME }}/laravel-vue-ecommerce
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Backend - Pest/PHPUnit tests (sqlite in-memory, per backend/phpunit.xml)
+  # ---------------------------------------------------------------------------
+  backend-tests:
+    name: Backend tests (PHP 8.4)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, pdo_mysql, pdo_sqlite, gd, exif, bcmath, intl, zip
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Run tests
+        run: composer test
+
+  # ---------------------------------------------------------------------------
+  # 2. Frontend - type-check + production build
+  # ---------------------------------------------------------------------------
+  frontend-build:
+    name: Frontend build (Node 22)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build (includes vue-tsc type-check)
+        run: npm run build
+        env:
+          VITE_API_URL: http://localhost:8000/api
+
+  # ---------------------------------------------------------------------------
+  # 3. Docker - validate compose, build images, smoke-test the full stack,
+  #    publish to Docker Hub on main
+  # ---------------------------------------------------------------------------
+  docker:
+    name: Docker build & publish
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set Docker Hub image name
+        run: echo "DOCKERHUB_IMAGE=${MY_DOCKER_USERNAME}/laravel-vue-ecommerce" >> "$GITHUB_ENV"
+        env:
+          MY_DOCKER_USERNAME: ${{ secrets.MY_DOCKER_USERNAME }}
+
+      - name: Validate compose file
+        run: docker compose config -q
+
+      - name: Build images
+        run: docker compose build backend frontend
+
+      - name: Smoke test the full stack (mysql -> backend -> frontend)
+        run: |
+          docker compose up -d mysql backend frontend
+          echo "Waiting for the backend to become healthy..."
+          for i in $(seq 1 40); do
+            if curl -fsS http://localhost:8000/api/categories >/dev/null 2>&1; then
+              echo "Backend is up (attempt ${i})."
+              break
+            fi
+            sleep 5
+            if [ "$i" -eq 40 ]; then
+              echo "Backend did not become healthy in time."
+              docker compose logs backend mysql
+              exit 1
+            fi
+          done
+
+          echo "--- backend API response:"
+          curl -fsS http://localhost:8000/api/categories | head -c 500
+          echo
+
+          echo "--- frontend response:"
+          curl -fsS http://localhost:5173 | head -n 5
+
+          docker compose down -v
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.MY_DOCKER_USERNAME }}
+          password: ${{ secrets.MY_DOCKER_PASSWORD }}
+
+      - name: Build and push images to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          BACKEND_IMAGE: ${{ env.DOCKERHUB_IMAGE }}/backend:${{ github.sha }}
+          FRONTEND_IMAGE: ${{ env.DOCKERHUB_IMAGE }}/frontend:${{ github.sha }}
+        run: |
+          # Build with Docker Hub tags
+          docker compose build backend frontend
+          
+          # Push with commit SHA tag
+          docker compose push backend frontend
+          
+          # Tag as latest and push
+          docker tag "${DOCKERHUB_IMAGE}/backend:${{ github.sha }}" "${DOCKERHUB_IMAGE}/backend:latest"
+          docker tag "${DOCKERHUB_IMAGE}/frontend:${{ github.sha }}" "${DOCKERHUB_IMAGE}/frontend:latest"
+          docker push "${DOCKERHUB_IMAGE}/backend:latest"
+          docker push "${DOCKERHUB_IMAGE}/frontend:latest"
