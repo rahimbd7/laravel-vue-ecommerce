@@ -1,5 +1,4 @@
 <?php
-// database/migrations/2026_03_26_081809_create_product_variations_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

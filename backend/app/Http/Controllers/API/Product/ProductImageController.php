@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/ProductImageController.php
 
 namespace App\Http\Controllers\API\Product;
 

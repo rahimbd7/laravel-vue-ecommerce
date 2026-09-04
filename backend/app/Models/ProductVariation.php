@@ -1,5 +1,4 @@
 <?php
-// app/Models/ProductVariation.php
 
 namespace App\Models;
 

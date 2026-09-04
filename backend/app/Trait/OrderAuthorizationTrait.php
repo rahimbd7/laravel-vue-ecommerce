@@ -1,5 +1,4 @@
 <?php
-// app/Trait/OrderAuthorizationTrait.php
 
 namespace App\Trait;
 

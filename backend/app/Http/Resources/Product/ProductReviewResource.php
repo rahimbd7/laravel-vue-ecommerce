@@ -1,5 +1,4 @@
 <?php
-// app/Http/Resources/Product/ProductReviewResource.php
 
 namespace App\Http\Resources\Product;
 

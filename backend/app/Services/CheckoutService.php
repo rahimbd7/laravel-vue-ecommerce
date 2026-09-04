@@ -1,5 +1,4 @@
 <?php
-// app/Services/CheckoutService.php
 
 namespace App\Services;
 
@@ -26,7 +25,6 @@ class CheckoutService {
             $cart    = $this->cartService->getCart();
             $profile = $user->profile;
 
-            // ✅ Updated: Include state and postal_code in hasAddress check
             $hasAddress = $profile &&
             ! empty($profile->address) &&
             ! empty($profile->city) &&
@@ -34,7 +32,6 @@ class CheckoutService {
             ! empty($profile->postal_code) &&
             ! empty($profile->country);
 
-            // ✅ Updated: Get ALL address fields from profile including state and postal_code
             $shippingAddress    = $data['shipping_address'] ?? ($profile?->address ?? null);
             $shippingCity       = $data['shipping_city'] ?? ($profile?->city ?? null);
             $shippingState      = $data['shipping_state'] ?? ($profile?->state ?? null);
@@ -57,7 +54,6 @@ class CheckoutService {
                 $billingCountry    = $data['billing_country'] ?? ($profile?->country ?? null);
             }
 
-            // ✅ Updated: Validate all address fields
             if (empty($shippingAddress) || empty($shippingCity) || empty($shippingState) || empty($shippingPostalCode) || empty($shippingCountry)) {
                 throw new \Exception('Complete shipping address (address, city, state, postal code, country) is required.');
             }
@@ -66,7 +62,6 @@ class CheckoutService {
                 throw new \Exception('Complete billing address is required.');
             }
 
-            // ✅ Updated: Save ALL address fields to profile including state and postal_code
             $shouldSaveAddress = false;
 
             if (! $hasAddress) {
@@ -79,8 +74,8 @@ class CheckoutService {
                 $profileData = [
                     'address'     => $shippingAddress,
                     'city'        => $shippingCity,
-                    'state'       => $shippingState,      // ✅ ADDED
-                    'postal_code' => $shippingPostalCode, // ✅ ADDED
+                    'state'       => $shippingState,
+                    'postal_code' => $shippingPostalCode,
                     'country'     => $shippingCountry,
                     'phone'       => $data['customer_phone'] ?? $profile?->phone ?? null,
                 ];
@@ -92,7 +87,6 @@ class CheckoutService {
                 }
             }
 
-            // ✅ Updated: Prepare ALL address fields for order creation
             $data['shipping_address']     = $shippingAddress;
             $data['shipping_city']        = $shippingCity;
             $data['shipping_state']       = $shippingState;
@@ -119,7 +113,6 @@ class CheckoutService {
                 'payment_method' => $data['payment_method'] ?? 'cod',
             ]);
 
-            // ✅ If payment is COD, mark as success immediately
             if ($data['payment_method'] === 'cod') {
                 $this->paymentService->confirmPayment($payment);
             }

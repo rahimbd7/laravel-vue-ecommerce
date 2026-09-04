@@ -37,7 +37,6 @@ class ProductImage extends Model
         'updated_at' => 'datetime',
     ];
 
-    // ✅ Simplified appends - just return stored URLs
     protected $appends = [
         'full_image_url',
         'full_thumbnail_url',
@@ -84,7 +83,6 @@ class ProductImage extends Model
     }
 
     // ===================== ACCESSORS =====================
-    // ✅ Simplified: Just return the stored URLs as-is
 
     public function getFullImageUrlAttribute()
     {

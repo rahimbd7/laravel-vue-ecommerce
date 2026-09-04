@@ -1,5 +1,4 @@
 <?php
-// app/Models/OrderItem.php
 
 namespace App\Models;
 

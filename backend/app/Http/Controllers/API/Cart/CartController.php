@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/API/Cart/CartController.php
 
 namespace App\Http\Controllers\API\Cart;
 

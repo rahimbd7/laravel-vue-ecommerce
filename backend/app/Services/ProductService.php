@@ -1,5 +1,4 @@
 <?php
-// app/Services/ProductService.php
 
 namespace App\Services;
 
@@ -24,7 +23,6 @@ class ProductService {
 
       /**
      * Create product with all relations
-     * ✅ Supports both local uploads and Cloudinary URLs
      */
     public function create(array $data, array $images = [], array $variations = []) {
         return DB::transaction(function () use ($data, $images, $variations) {
@@ -36,12 +34,10 @@ class ProductService {
             // Create product
             $product = Product::create($data);
 
-            // ✅ Handle images - Hybrid (supports both local and Cloudinary)
             if (!empty($images)) {
                 foreach ($images as $index => $imageData) {
                     // Check if it's a Cloudinary image (has secure_url)
                     if (isset($imageData['secure_url'])) {
-                        // ✅ Cloudinary image
                         ProductImage::create([
                             'product_id' => $product->id,
                             'image_url' => $imageData['secure_url'],
@@ -54,7 +50,6 @@ class ProductService {
                             'mime_type' => 'image/webp',
                         ]);
                     } else {
-                        // ✅ Local file upload (handled by ProductImageService)
                         $this->imageService->attachToProduct($product, $images);
                         break; // Exit loop since all images are handled together
                     }
@@ -78,14 +73,12 @@ class ProductService {
 
     /**
      * Update product
-     * ✅ Supports both local uploads and Cloudinary URLs
      */
     public function update(Product $product, array $data, array $images = [], array $variations = []) {
         return DB::transaction(function () use ($product, $data, $images, $variations) {
             // Update product
             $product->update($data);
 
-            // ✅ Handle images - Hybrid
             if (!empty($images)) {
                 // Delete existing images
                 foreach ($product->images as $image) {
@@ -95,7 +88,6 @@ class ProductService {
                 // Create new images
                 foreach ($images as $index => $imageData) {
                     if (isset($imageData['secure_url'])) {
-                        // ✅ Cloudinary image
                         ProductImage::create([
                             'product_id' => $product->id,
                             'image_url' => $imageData['secure_url'],
@@ -108,7 +100,6 @@ class ProductService {
                             'mime_type' => 'image/webp',
                         ]);
                     } else {
-                        // ✅ Local file upload (handled by ProductImageService)
                         $this->imageService->syncForProduct($product, $images);
                         break;
                     }

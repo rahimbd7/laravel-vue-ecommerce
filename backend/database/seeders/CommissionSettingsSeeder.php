@@ -9,7 +9,6 @@ class CommissionSettingsSeeder extends Seeder
 {
     public function run()
     {
-        // ✅ Create default global commission rate
         CommissionSetting::create([
             'vendor_id' => null,
             'rate' => 8.00, // 8% commission
@@ -19,6 +18,6 @@ class CommissionSettingsSeeder extends Seeder
             'effective_to' => null,
         ]);
 
-        $this->command->info('✅ Default commission rate (8%) created successfully!');
+        $this->command->info('Default commission rate (8%) created successfully!');
     }
 }

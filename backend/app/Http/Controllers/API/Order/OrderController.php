@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/API/Order/OrderController.php
 
 namespace App\Http\Controllers\API\Order;
 

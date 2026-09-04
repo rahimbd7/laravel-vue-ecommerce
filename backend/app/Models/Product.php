@@ -294,7 +294,6 @@ class Product extends Model {
         return $this->compare_price && $this->compare_price > $this->price;
     }
 
-    // ✅ SIMPLIFIED: Just return the stored URL, no generation
     public function getThumbnailAttribute() {
         $primary = $this->primaryImage;
         if ($primary) {
@@ -309,7 +308,6 @@ class Product extends Model {
         return asset('images/no-image.jpg');
     }
 
-    // ✅ SIMPLIFIED: Just return the stored URL, no generation
     public function getImageUrlAttribute() {
         $primary = $this->primaryImage;
         if ($primary) {

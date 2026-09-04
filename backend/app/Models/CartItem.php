@@ -1,5 +1,4 @@
 <?php
-// app/Models/CartItem.php
 
 namespace App\Models;
 

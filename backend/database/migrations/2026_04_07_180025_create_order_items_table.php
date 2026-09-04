@@ -1,5 +1,4 @@
 <?php
-// database/migrations/2026_03_27_000002_create_order_items_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

@@ -19,7 +19,7 @@ class BackfillVendorPayouts extends Command
         $dryRun = $this->option('dry-run');
 
         if ($dryRun) {
-            $this->info('🔍 DRY RUN MODE - No changes will be made');
+            $this->info('DRY RUN MODE - No changes will be made');
             $this->line('');
         }
 
@@ -28,7 +28,7 @@ class BackfillVendorPayouts extends Command
             ->where('payment_status', 'paid')
             ->get();
 
-        $this->info("📦 Found {$orders->count()} delivered orders to process");
+        $this->info("Found {$orders->count()} delivered orders to process");
 
         if ($orders->isEmpty()) {
             $this->warn('No delivered orders found to backfill.');
@@ -97,10 +97,10 @@ class BackfillVendorPayouts extends Command
         $this->line('');
 
         if ($dryRun) {
-            $this->info("🔍 Dry run completed. Would process {$processed} vendor payouts.");
+            $this->info("Dry run completed. Would process {$processed} vendor payouts.");
         } else {
-            $this->info("✅ Processed {$processed} vendor payouts successfully!");
-            $this->info("⏭️ Skipped {$skipped} orders (already processed)");
+            $this->info("Processed {$processed} vendor payouts successfully!");
+            $this->info("Skipped {$skipped} orders (already processed)");
         }
 
         return 0;

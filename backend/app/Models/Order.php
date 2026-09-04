@@ -168,13 +168,11 @@ class Order extends Model
     {
         return $this->hasMany(Payment::class);
     }
-    // ✅ Get coupon code through relationship
     public function getCouponCodeAttribute()
     {
         return $this->coupon ? $this->coupon->code : null;
     }
 
-    // ✅ Get coupon name through relationship
     public function getCouponNameAttribute()
     {
         return $this->coupon ? $this->coupon->name : null;
