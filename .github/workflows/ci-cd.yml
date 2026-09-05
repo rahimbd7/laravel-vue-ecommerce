@@ -133,17 +133,29 @@ jobs:
       - name: Build and push images to Docker Hub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
-          BACKEND_IMAGE: ${{ env.DOCKERHUB_IMAGE }}/backend:${{ github.sha }}
-          FRONTEND_IMAGE: ${{ env.DOCKERHUB_IMAGE }}/frontend:${{ github.sha }}
+          DOCKERHUB_IMAGE: ${{ env.DOCKERHUB_IMAGE }}
         run: |
           # Build with Docker Hub tags
           docker compose build backend frontend
 
-          # Push with commit SHA tag
-          docker compose push backend frontend
+          # Tag backend with backend- prefix
+          docker tag laravel-vue-ecommerce-backend:local \
+            "${DOCKERHUB_IMAGE}:backend-${{ github.sha }}"
 
-          # Tag as latest and push
-          docker tag "${DOCKERHUB_IMAGE}/backend:${{ github.sha }}" "${DOCKERHUB_IMAGE}/backend:latest"
-          docker tag "${DOCKERHUB_IMAGE}/frontend:${{ github.sha }}" "${DOCKERHUB_IMAGE}/frontend:latest"
-          docker push "${DOCKERHUB_IMAGE}/backend:latest"
-          docker push "${DOCKERHUB_IMAGE}/frontend:latest"
+          # Tag frontend with frontend- prefix
+          docker tag laravel-vue-ecommerce-frontend:local \
+            "${DOCKERHUB_IMAGE}:frontend-${{ github.sha }}"
+
+          # Push with commit SHA tag
+          docker push "${DOCKERHUB_IMAGE}:backend-${{ github.sha }}"
+          docker push "${DOCKERHUB_IMAGE}:frontend-${{ github.sha }}"
+
+          # Tag as latest and push (USE hyphen, not colon)
+          docker tag "${DOCKERHUB_IMAGE}:backend-${{ github.sha }}" \
+            "${DOCKERHUB_IMAGE}:backend-latest"
+          docker tag "${DOCKERHUB_IMAGE}:frontend-${{ github.sha }}" \
+            "${DOCKERHUB_IMAGE}:frontend-latest"
+
+          # Push latest tags
+          docker push "${DOCKERHUB_IMAGE}:backend-latest"
+          docker push "${DOCKERHUB_IMAGE}:frontend-latest"
