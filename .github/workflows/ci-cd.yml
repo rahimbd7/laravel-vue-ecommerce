@@ -13,7 +13,7 @@ permissions:
 
 env:
   # Docker Hub configuration
-  MY_DOCKER_USERNAME: rahimbd7  # ← CHANGE to your Docker Hub username
+  MY_DOCKER_USERNAME: ${{ secrets.MY_DOCKER_USERNAME}}
   DOCKERHUB_IMAGE: ${{ secrets.MY_DOCKER_USERNAME }}/laravel-vue-ecommerce
 
 jobs:
@@ -68,7 +68,12 @@ jobs:
       - name: Build (includes vue-tsc type-check)
         run: npm run build
         env:
-          VITE_API_URL: http://localhost:8000/api
+          VITE_CLOUDINARY_CLOUD_NAME: ${{ secrets.VITE_CLOUDINARY_CLOUD_NAME }}
+          VITE_CLOUDINARY_PRODUCT_PRESET: ${{ secrets.VITE_CLOUDINARY_PRODUCT_PRESET }}
+          VITE_CLOUDINARY_CATEGORY_PRESET: ${{ secrets.VITE_CLOUDINARY_CATEGORY_PRESET }}
+          VITE_CLOUDINARY_PROFILE_PRESET:
+            ${{ secrets.VITE_CLOUDINARY_PROFILE_PRESET }}
+            #VITE_API_URL: http://localhost:8000/api
 
   # ---------------------------------------------------------------------------
   # 3. Docker - validate compose, build images, smoke-test the full stack,
@@ -133,10 +138,10 @@ jobs:
         run: |
           # Build with Docker Hub tags
           docker compose build backend frontend
-          
+
           # Push with commit SHA tag
           docker compose push backend frontend
-          
+
           # Tag as latest and push
           docker tag "${DOCKERHUB_IMAGE}/backend:${{ github.sha }}" "${DOCKERHUB_IMAGE}/backend:latest"
           docker tag "${DOCKERHUB_IMAGE}/frontend:${{ github.sha }}" "${DOCKERHUB_IMAGE}/frontend:latest"
