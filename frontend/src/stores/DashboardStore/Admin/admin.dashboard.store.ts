@@ -121,6 +121,28 @@ interface PendingVendor {
   created_at: string
 }
 
+export interface VendorApplication {
+  id: number
+  user: {
+    id: string
+    name: string
+    email: string
+    role: string
+    created_at: string
+    updated_at: string
+  } | null
+  business_name: string
+  business_email: string
+  business_phone: string
+  tax_number: string | null
+  website: string | null
+  description: string | null
+  commission_rate: string | number
+  is_verified: boolean
+  created_at: string
+  updated_at: string
+}
+
 interface TopVendor {
   id: number
   business_name: string
@@ -174,6 +196,15 @@ export const useAdminDashboardStore = defineStore('adminDashboard', {
     pendingPayouts: [] as PendingPayout[],
     payoutSummary: null as PayoutSummary | null,
 
+    // Pending vendor applications (from /admin/vendor/pending)
+    pendingApplications: [] as VendorApplication[],
+    applicationsPagination: {
+      current_page: 1,
+      last_page: 1,
+      per_page: 10,
+      total: 0
+    },
+
     // Loading States
     loading: {
       dashboard: false,
@@ -187,6 +218,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', {
       pendingVendors: false,
       pendingPayouts: false,
       payoutSummary: false,
+      applications: false,
     },
 
     // Errors
@@ -202,12 +234,14 @@ export const useAdminDashboardStore = defineStore('adminDashboard', {
       pendingVendors: null as string | null,
       pendingPayouts: null as string | null,
       payoutSummary: null as string | null,
+      applications: null as string | null,
     },
 
     // Initialization
     isInitialized: false,
     lastFetched: {
       dashboard: null as number | null,
+      applications: null as number | null,
     },
   }),
 
@@ -508,6 +542,46 @@ export const useAdminDashboardStore = defineStore('adminDashboard', {
       }
     },
 
+    // ===================== PENDING VENDOR APPLICATIONS =====================
+    async fetchPendingApplications(force = false, page = 1, perPage = 10) {
+      // Check cache TTL (5 minutes)
+      if (!force && this.lastFetched.applications &&
+          Date.now() - this.lastFetched.applications < 300000) {
+        return { applications: this.pendingApplications, pagination: this.applicationsPagination }
+      }
+
+      this.loading.applications = true
+      this.error.applications = null
+
+      try {
+        const response = await api.get('/admin/vendor/pending', {
+          params: { page, per_page: perPage }
+        })
+
+        // `/admin/vendor/pending` returns a VendorResource::collection(paginator),
+        // so the actual rows + pagination meta are nested one level deeper.
+        const data = response.data.data || {}
+        const rows = Array.isArray(data) ? data : (data.data || [])
+        const meta = data.meta || {}
+
+        this.pendingApplications = rows
+        this.applicationsPagination = {
+          current_page: meta.current_page ?? data.current_page ?? 1,
+          last_page: meta.last_page ?? data.last_page ?? 1,
+          per_page: meta.per_page ?? data.per_page ?? perPage,
+          total: meta.total ?? data.total ?? 0,
+        }
+        this.lastFetched.applications = Date.now()
+
+        return { applications: this.pendingApplications, pagination: this.applicationsPagination }
+      } catch (error: any) {
+        this.error.applications = error.response?.data?.message || 'Failed to load pending vendor applications'
+        throw error
+      } finally {
+        this.loading.applications = false
+      }
+    },
+
     // ===================== APPROVE VENDOR =====================
     async approveVendor(vendorId: number): Promise<any> {
       try {
@@ -515,6 +589,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', {
         // Refresh pending vendors list
         await this.fetchPendingVendors(true)
         await this.fetchVendors(true)
+        await this.fetchPendingApplications(true)
         return response.data
       } catch (error) {
         throw error
@@ -530,6 +605,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', {
         // Refresh pending vendors list
         await this.fetchPendingVendors(true)
         await this.fetchVendors(true)
+        await this.fetchPendingApplications(true)
         return response.data
       } catch (error) {
         throw error
@@ -609,10 +685,18 @@ export const useAdminDashboardStore = defineStore('adminDashboard', {
       this.activities = []
       this.topVendors = []
       this.pendingVendors = []
+      this.pendingApplications = []
+      this.applicationsPagination = {
+        current_page: 1,
+        last_page: 1,
+        per_page: 10,
+        total: 0
+      }
       this.pendingPayouts = []
       this.payoutSummary = null
       this.isInitialized = false
       this.lastFetched.dashboard = null
+      this.lastFetched.applications = null
       this.loading = {
         dashboard: false,
         revenue: false,
@@ -625,6 +709,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', {
         pendingVendors: false,
         pendingPayouts: false,
         payoutSummary: false,
+        applications: false,
       }
       this.error = {
         dashboard: null,
@@ -638,6 +723,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', {
         pendingVendors: null,
         pendingPayouts: null,
         payoutSummary: null,
+        applications: null,
       }
     },
   },

@@ -8,12 +8,13 @@ interface User {
   role: string
   profile?: {
     phone?: string
+    avatar?: string
     address?: string
     city?: string
     country?: string
     postal_code?: string
     state?: string
-    
+
   }
 }
 

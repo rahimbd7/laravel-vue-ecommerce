@@ -35,10 +35,18 @@
             >
               <template #default>
                 <div class="flex items-center gap-2">
-                  <!-- Nice avatar with gradient background -->
-                  <Avatar 
-                    :label="userInitials" 
-                    size="small" 
+                  <!-- Avatar: show profile image if exists, otherwise show initials -->
+                  <Avatar
+                    v-if="userAvatar"
+                    :image="userAvatar"
+                    size="small"
+                    shape="circle"
+                    style="border: 2px solid white;"
+                  />
+                  <Avatar
+                    v-else
+                    :label="userInitials"
+                    size="small"
                     style="background: linear-gradient(135deg, #00685F, #00A88F); color: white; font-weight: 600;"
                   />
                   <span class="hidden md:inline font-medium text-white">{{ userName }}</span>
@@ -56,10 +64,18 @@
               aria-label="User menu"
               :aria-expanded="mobileMenuOpen"
             >
-              <!-- Nice avatar with gradient background -->
-              <Avatar 
-                :label="userInitials" 
-                size="small" 
+              <!-- Avatar: show profile image if exists, otherwise show initials -->
+              <Avatar
+                v-if="userAvatar"
+                :image="userAvatar"
+                size="small"
+                shape="circle"
+                style="cursor: pointer;"
+              />
+              <Avatar
+                v-else
+                :label="userInitials"
+                size="small"
                 style="background: linear-gradient(135deg, #00685F, #00A88F); color: white; font-weight: 600; cursor: pointer;"
               />
             </button>
@@ -81,9 +97,17 @@
               >
                 <!-- User info header with nice avatar -->
                 <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-                  <Avatar 
-                    :label="userInitials" 
-                    size="large" 
+                  <!-- Avatar: show profile image if exists, otherwise show initials -->
+                  <Avatar
+                    v-if="userAvatar"
+                    :image="userAvatar"
+                    size="large"
+                    shape="circle"
+                  />
+                  <Avatar
+                    v-else
+                    :label="userInitials"
+                    size="large"
                     style="background: linear-gradient(135deg, #00685F, #00A88F); color: white; font-weight: 600;"
                   />
                   <div class="min-w-0 flex-1">
@@ -291,6 +315,11 @@ const userInitials = computed(() => {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 })
 
+// Get user avatar URL from auth store (profile image)
+const userAvatar = computed(() => {
+  return authStore.user?.profile?.avatar || null
+})
+
 // Helper function to get orders path
 const getOrdersPath = () => {
   const role = authStore.user?.role || 'customer'
@@ -409,6 +438,13 @@ const panelMenuItems = computed(() => {
         items: [
           { label: 'User Overview', icon: 'pi pi-list', to: '/dashboard/admin/users', command: () => router.push('/dashboard/admin/users') },
           { label: 'Manage Users', icon: 'pi pi-user', to: '/dashboard/admin/users/user-management', command: () => router.push('/dashboard/admin/users/user-management') },
+        ]
+      },
+      {
+        label: 'Vendors',
+        icon: 'pi pi-store',
+        items: [
+          { label: 'Vendor Applications', icon: 'pi pi-user-plus', to: '/dashboard/admin/users/vendor-applications', command: () => router.push('/dashboard/admin/users/vendor-applications') },
         ]
       },
       {
@@ -551,6 +587,13 @@ const panelMenuItems = computed(() => {
         icon: 'pi pi-tag',
         items: [
           { label: 'My Coupons', icon: 'pi pi-list', to: '/dashboard/customer/coupons', command: () => router.push('/dashboard/customer/coupons') }
+        ]
+      },
+      {
+        label: 'Vendor Account',
+        icon: 'pi pi-store',
+        items: [
+          { label: 'Apply for Vendor', icon: 'pi pi-user-plus', to: '/dashboard/customer/apply-for-vendor', command: () => router.push('/dashboard/customer/apply-for-vendor') }
         ]
       }
     )

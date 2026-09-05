@@ -41,6 +41,12 @@ export const customerRoutes: RouteRecordRaw[] = [
     meta: { ...roles, title: "My Wishlist", breadcrumb: ["Wishlist"] },
   },
   {
+    path: "customer/apply-for-vendor",
+    name: "CustomerApplyForVendor",
+    component: () => import("@/views/Dashboard/customer/applyforvendor/ApplyforVendor.vue"),
+    meta: { ...roles, title: "Apply for Vendor", breadcrumb: ["Vendor", "Apply"] },
+  },
+  {
     // Was commented out while the sidebar still linked here -> dead link.
     path: "customer/payments",
     name: "CustomerPayments",

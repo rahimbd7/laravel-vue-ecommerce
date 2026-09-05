@@ -52,6 +52,27 @@ interface Order {
   items: any[]
 }
 
+export interface Payment {
+  id: number
+  order_id: number
+  user_id: number
+  amount: number | string
+  payment_method: string
+  status: string
+  transaction_id: string | null
+  gateway_response: any
+  paid_at: string | null
+  metadata: Record<string, any> | null
+  created_at: string
+  updated_at: string
+  order?: {
+    id: number
+    order_number: string
+    status: string
+    grand_total: number
+  } | null
+}
+
 interface Address {
   address: string
   city: string
@@ -60,6 +81,27 @@ interface Address {
   country: string
   full_address: string
 }
+
+interface Vendor {
+  id: number
+  business_name: string
+  business_email: string
+  business_phone: string
+  tax_number: string | null
+  website: string | null
+  description: string | null
+  commission_rate: number
+  is_verified: boolean
+  user?: {
+    uuid: string
+    name: string
+    email: string
+  }
+  created_at: string
+  updated_at: string
+}
+
+type VendorApplicationStatus = 'not_applied' | 'pending' | 'verified' | 'rejected'
 
 export const useCustomerDashboardStore = defineStore('customerDashboard', {
   state: () => ({
@@ -78,16 +120,33 @@ export const useCustomerDashboardStore = defineStore('customerDashboard', {
       per_page: 15,
       total: 0
     },
+
+    // Payments
+    payments: [] as Payment[],
+    paymentPagination: {
+      current_page: 1,
+      last_page: 1,
+      per_page: 15,
+      total: 0
+    },
     
     // Address
     address: null as Address | null,
+
+    // Vendor application
+    vendorApplicationStatus: null as VendorApplicationStatus | null,
+    vendorApplication: null as Vendor | null,
+    applicationMessage: null as string | null,
+    applicationRejectionReason: null as string | null,
     
     // Cache timestamps (for TTL-based invalidation)
     lastFetched: {
       profile: null as number | null,
       wishlist: null as number | null,
       orders: null as number | null,
+      payments: null as number | null,
       address: null as number | null,
+      application: null as number | null,
     },
     
     // Loading states
@@ -95,7 +154,9 @@ export const useCustomerDashboardStore = defineStore('customerDashboard', {
       profile: false,
       wishlist: false,
       orders: false,
+      payments: false,
       address: false,
+      application: false,
     },
     
     // Errors
@@ -103,7 +164,9 @@ export const useCustomerDashboardStore = defineStore('customerDashboard', {
       profile: null as string | null,
       wishlist: null as string | null,
       orders: null as string | null,
+      payments: null as string | null,
       address: null as string | null,
+      application: null as string | null,
     },
     
     // Initialization flag
@@ -136,9 +199,25 @@ export const useCustomerDashboardStore = defineStore('customerDashboard', {
     orderCount: (state) => state.orderPagination.total,
     recentOrders: (state) => state.orders.slice(0, 5),
 
+    // Payments
+    paymentCount: (state) => state.paymentPagination.total,
+    successfulPayments: (state) => state.payments.filter(p => p.status === 'success'),
+    totalPaid: (state) => state.payments
+      .filter(p => p.status === 'success')
+      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0),
+    pendingPaymentAmount: (state) => state.payments
+      .filter(p => p.status === 'pending' || p.status === 'processing')
+      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0),
+
     // Address
     isAddressLoaded: (state) => state.address !== null,
     fullAddress: (state) => state.address?.full_address || '',
+
+    // Vendor application
+    hasAppliedForVendor: (state) =>
+      state.vendorApplicationStatus === 'pending' || state.vendorApplicationStatus === 'verified',
+    isVendorVerified: (state) => state.vendorApplicationStatus === 'verified',
+    isVendorRejected: (state) => state.vendorApplicationStatus === 'rejected',
   },
 
   actions: {
@@ -433,6 +512,48 @@ export const useCustomerDashboardStore = defineStore('customerDashboard', {
       }
     },
 
+    // ===================== PAYMENTS =====================
+    async fetchPayments(force = false, page = 1, perPage = 15) {
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return { payments: [], pagination: this.paymentPagination }
+
+      // Check cache TTL (5 minutes)
+      if (!force && this.lastFetched.payments &&
+          Date.now() - this.lastFetched.payments < 300000) {
+        return { payments: this.payments, pagination: this.paymentPagination }
+      }
+
+      this.loading.payments = true
+      this.error.payments = null
+
+      try {
+        const response = await api.get('/payments/my', {
+          params: { page, per_page: perPage }
+        })
+
+        // `/payments/my` returns paginationResponse -> items in `data`,
+        // pagination metadata in `meta`.
+        const data = response.data.data || []
+        const meta = response.data.meta || {}
+
+        this.payments = data
+        this.paymentPagination = {
+          current_page: meta.current_page || 1,
+          last_page: meta.last_page || 1,
+          per_page: meta.per_page || perPage,
+          total: meta.total || 0
+        }
+        this.lastFetched.payments = Date.now()
+
+        return { payments: this.payments, pagination: this.paymentPagination }
+      } catch (error: any) {
+        this.error.payments = error.response?.data?.message || 'Failed to load payment history'
+        throw error
+      } finally {
+        this.loading.payments = false
+      }
+    },
+
     // ===================== ADDRESS =====================
     async fetchAddress(force = false) {
       const authStore = useAuthStore()
@@ -486,6 +607,80 @@ export const useCustomerDashboardStore = defineStore('customerDashboard', {
       }
     },
 
+    // ===================== VENDOR APPLICATION =====================
+    async fetchVendorApplicationStatus(force = false) {
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return null
+
+      // Check cache TTL (5 minutes)
+      if (!force && this.lastFetched.application &&
+          Date.now() - this.lastFetched.application < 300000) {
+        return { status: this.vendorApplicationStatus, vendor: this.vendorApplication, message: this.applicationMessage }
+      }
+
+      this.loading.application = true
+      this.error.application = null
+
+      try {
+        const response = await api.get('/vendor/application-status')
+        const data = response.data.data
+
+        this.vendorApplicationStatus = data.status || 'not_applied'
+        this.vendorApplication = data.vendor || null
+        this.applicationMessage = data.message || null
+        this.applicationRejectionReason = data.rejection_reason || null
+        this.lastFetched.application = Date.now()
+
+        // If the admin approved the application the backend promotes the user to
+        // "vendor". Refresh the auth profile so the sidebar/role-based routes
+        // reflect the new role without requiring a re-login.
+        if (this.vendorApplicationStatus === 'verified') {
+          authStore.fetchProfile().catch(() => {})
+        }
+
+        return { status: this.vendorApplicationStatus, vendor: this.vendorApplication, message: this.applicationMessage }
+      } catch (error: any) {
+        this.error.application = error.response?.data?.message || 'Failed to load vendor application status'
+        throw error
+      } finally {
+        this.loading.application = false
+      }
+    },
+
+    async applyForVendor(data: {
+      business_name: string
+      business_email: string
+      business_phone: string
+      tax_number?: string | null
+      website?: string | null
+      description?: string | null
+      commission_rate?: number | null
+    }) {
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) throw new Error('Not authenticated')
+
+      this.loading.application = true
+      this.error.application = null
+
+      try {
+        const response = await api.post('/vendor/apply', data)
+        const vendor = response.data.data
+
+        this.vendorApplication = vendor
+        this.vendorApplicationStatus = 'pending'
+        this.applicationMessage = response.data.message || 'Vendor application submitted successfully'
+        this.applicationRejectionReason = null
+        this.lastFetched.application = Date.now()
+
+        return response.data
+      } catch (error: any) {
+        this.error.application = error.response?.data?.message || 'Failed to submit vendor application'
+        throw error
+      } finally {
+        this.loading.application = false
+      }
+    },
+
     // ===================== UTILITY =====================
     resetAll() {
       this.profile = null
@@ -498,24 +693,41 @@ export const useCustomerDashboardStore = defineStore('customerDashboard', {
         per_page: 15,
         total: 0
       }
+      this.payments = []
+      this.paymentPagination = {
+        current_page: 1,
+        last_page: 1,
+        per_page: 15,
+        total: 0
+      }
       this.address = null
+      this.vendorApplicationStatus = null
+      this.vendorApplication = null
+      this.applicationMessage = null
+      this.applicationRejectionReason = null
       this.lastFetched = {
         profile: null,
         wishlist: null,
         orders: null,
+        payments: null,
         address: null,
+        application: null,
       }
       this.loading = {
         profile: false,
         wishlist: false,
         orders: false,
+        payments: false,
         address: false,
+        application: false,
       }
       this.error = {
         profile: null,
         wishlist: null,
         orders: null,
+        payments: null,
         address: null,
+        application: null,
       }
       this.isInitialized = false
     },
@@ -526,6 +738,8 @@ export const useCustomerDashboardStore = defineStore('customerDashboard', {
         this.fetchWishlist(true),
         this.fetchOrders(1, 15, true),
         this.fetchAddress(true),
+        this.fetchVendorApplicationStatus(true),
+        this.fetchPayments(true),
       ])
     }
   }

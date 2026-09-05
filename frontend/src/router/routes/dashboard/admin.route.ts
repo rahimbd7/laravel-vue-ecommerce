@@ -36,6 +36,12 @@ export const adminRoutes: RouteRecordRaw[] = [
     component: () => import("@/views/Dashboard/admin/orders/SingleUserOrders.vue"),
     meta: { ...roles, title: "User Orders", breadcrumb: ["Users", "Orders"] },
   },
+  {
+    path: "admin/users/vendor-applications",
+    name: "AdminVendorApplications",
+    component: () => import("@/views/Dashboard/admin/users/VendorApplicationStatus.vue"),
+    meta: { ...roles, title: "Vendor Applications", breadcrumb: ["Users", "Vendor Applications"] },
+  },
 
   // ---- Orders ------------------------------------------------------------
   {
