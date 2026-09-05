@@ -13,12 +13,12 @@ permissions:
 
 env:
   # Docker Hub configuration
-  MY_DOCKER_USERNAME: ${{ secrets.MY_DOCKER_USERNAME}}
+  MY_DOCKER_USERNAME: ${{ secrets.MY_DOCKER_USERNAME }}
   DOCKERHUB_IMAGE: ${{ secrets.MY_DOCKER_USERNAME }}/laravel-vue-ecommerce
 
 jobs:
   # ---------------------------------------------------------------------------
-  # 1. Backend - Pest/PHPUnit tests (sqlite in-memory, per backend/phpunit.xml)
+  # 1. Backend - Pest/PHPUnit tests (sqlite in-memory)
   # ---------------------------------------------------------------------------
   backend-tests:
     name: Backend tests (PHP 8.4)
@@ -40,8 +40,20 @@ jobs:
 
       - name: Prepare application
         run: |
-          cp .env.example .env
+          # Create .env for testing (fallback if .env.example doesn't exist)
+          if [ -f .env.example ]; then
+            cp .env.example .env
+          else
+            echo "APP_ENV=testing" > .env
+            echo "APP_DEBUG=true" >> .env
+            echo "APP_URL=http://localhost:8000" >> .env
+            echo "DB_CONNECTION=sqlite" >> .env
+            echo "DB_DATABASE=/tmp/database.sqlite" >> .env
+            echo "SESSION_DRIVER=array" >> .env
+            echo "CACHE_DRIVER=array" >> .env
+          fi
           php artisan key:generate --force
+          php artisan config:clear
 
       - name: Run tests
         run: composer test
@@ -68,16 +80,14 @@ jobs:
       - name: Build (includes vue-tsc type-check)
         run: npm run build
         env:
+          VITE_API_URL: http://localhost:8000/api
           VITE_CLOUDINARY_CLOUD_NAME: ${{ secrets.VITE_CLOUDINARY_CLOUD_NAME }}
           VITE_CLOUDINARY_PRODUCT_PRESET: ${{ secrets.VITE_CLOUDINARY_PRODUCT_PRESET }}
           VITE_CLOUDINARY_CATEGORY_PRESET: ${{ secrets.VITE_CLOUDINARY_CATEGORY_PRESET }}
-          VITE_CLOUDINARY_PROFILE_PRESET:
-            ${{ secrets.VITE_CLOUDINARY_PROFILE_PRESET }}
-            #VITE_API_URL: http://localhost:8000/api
+          VITE_CLOUDINARY_PROFILE_PRESET: ${{ secrets.VITE_CLOUDINARY_PROFILE_PRESET }}
 
   # ---------------------------------------------------------------------------
-  # 3. Docker - validate compose, build images, smoke-test the full stack,
-  #    publish to Docker Hub on main
+  # 3. Docker - build, test, and publish to Docker Hub
   # ---------------------------------------------------------------------------
   docker:
     name: Docker build & publish
@@ -97,7 +107,7 @@ jobs:
       - name: Build images
         run: docker compose build backend frontend
 
-      - name: Smoke test the full stack (mysql -> backend -> frontend)
+      - name: Smoke test the full stack
         run: |
           docker compose up -d mysql backend frontend
           echo "Waiting for the backend to become healthy..."
@@ -138,19 +148,26 @@ jobs:
           # Build with Docker Hub tags
           docker compose build backend frontend
 
+          # Get the actual image names from docker compose
+          BACKEND_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "backend" | head -1)
+          FRONTEND_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "frontend" | head -1)
+
+          echo "Using backend image: $BACKEND_IMAGE"
+          echo "Using frontend image: $FRONTEND_IMAGE"
+
           # Tag backend with backend- prefix
-          docker tag laravel-vue-ecommerce-backend:local \
+          docker tag "$BACKEND_IMAGE" \
             "${DOCKERHUB_IMAGE}:backend-${{ github.sha }}"
 
           # Tag frontend with frontend- prefix
-          docker tag laravel-vue-ecommerce-frontend:local \
+          docker tag "$FRONTEND_IMAGE" \
             "${DOCKERHUB_IMAGE}:frontend-${{ github.sha }}"
 
           # Push with commit SHA tag
           docker push "${DOCKERHUB_IMAGE}:backend-${{ github.sha }}"
           docker push "${DOCKERHUB_IMAGE}:frontend-${{ github.sha }}"
 
-          # Tag as latest and push (USE hyphen, not colon)
+          # Tag as latest and push
           docker tag "${DOCKERHUB_IMAGE}:backend-${{ github.sha }}" \
             "${DOCKERHUB_IMAGE}:backend-latest"
           docker tag "${DOCKERHUB_IMAGE}:frontend-${{ github.sha }}" \
