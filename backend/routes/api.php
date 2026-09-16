@@ -174,6 +174,12 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::post('/vendor/{vendor}/approve', [AdminVendorController::class, 'approvedVendors']);
     Route::post('/vendor/{vendor}/reject', [AdminVendorController::class, 'rejectVendor']);
 
+    // Admin vendor directory - powers the vendor picker on the Settings page
+    // so an admin can load a vendor and update their commission/payment methods.
+    Route::get('/vendors', [AdminVendorController::class, 'index']);
+    Route::get('/vendors/{vendor}', [AdminVendorController::class, 'show']);
+    Route::put('/vendors/{vendor}', [AdminVendorController::class, 'update']);
+
 });
 
 /**

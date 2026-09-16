@@ -12,19 +12,20 @@ class VendorService
     public function apply(User $user, array $data): Vendor
     {
         return DB::transaction(function () use ($user, $data) {
-            // Check if already a vendor
-            if ($user->vendor) {
-                throw new \Exception(
-                    $user->vendor->is_verified
-                        ? 'You are already a verified vendor'
-                        : 'Your vendor application is pending approval'
-                );
+            // Check if already a vendor / has a pending application
+            $existing = $user->vendor;
+
+            if ($existing) {
+                if ($existing->is_verified) {
+                    throw new \Exception('You are already a verified vendor');
+                }
+                if (!$existing->rejected_at) {
+                    throw new \Exception('Your vendor application is pending approval');
+                }
+                // Rejected applications can be re-submitted.
             }
 
-            $user->save();
-
-            // Create vendor (unverified)
-            $vendor = $user->vendor()->create([
+            $payload = [
                 'business_name' => $data['business_name'],
                 'business_email' => $data['business_email'],
                 'business_phone' => $data['business_phone'],
@@ -33,7 +34,20 @@ class VendorService
                 'description' => $data['description'] ?? null,
                 'commission_rate' => $data['commission_rate'] ?? 10.00,
                 'is_verified' => false,
-            ]);
+                'status' => 'pending',
+                'verified_at' => null,
+                'rejected_at' => null,
+                'rejection_reason' => null,
+            ];
+
+            if ($existing) {
+                // Re-submission: refresh the existing rejected record.
+                $existing->update($payload);
+                $vendor = $existing;
+            } else {
+                // Create vendor (unverified)
+                $vendor = $user->vendor()->create($payload);
+            }
 
             // TODO: Send notification to admin
 

@@ -59,6 +59,17 @@ class VendorApplicationController extends Controller
             ]);
         }
 
+        // A rejected application is its own status so the customer's panel
+        // can show the rejection reason and allow re-applying.
+        if ($user->vendor->rejected_at) {
+            return $this->successResponse([
+                'status' => 'rejected',
+                'vendor' => new VendorResource($user->vendor->load('user')),
+                'message' => 'Your vendor application was rejected.',
+                'rejection_reason' => $user->vendor->rejection_reason,
+            ]);
+        }
+
         return $this->successResponse([
             'status' => $user->vendor->is_verified ? 'verified' : 'pending',
             'vendor' => new VendorResource($user->vendor->load('user')),
