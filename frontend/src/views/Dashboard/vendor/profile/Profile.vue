@@ -405,7 +405,7 @@ const saveProfile = async () => {
       uploadProgress.value = 0
     }
 
-    // ✅ Prepare payload with logo_url
+    // ✅ Prepare payload (without logo_url - it's handled separately)
     const payload = {
       name: form.value.name,
       business_name: form.value.business_name,
@@ -414,11 +414,15 @@ const saveProfile = async () => {
       tax_number: form.value.tax_number,
       website: form.value.website,
       description: form.value.description,
-      logo_url: logoUrl // ✅ Send Cloudinary URL
     }
 
     // ✅ Update profile using store
     await vendorProfileStore.updateProfile(payload)
+
+    // ✅ Update logo URL separately using the dedicated endpoint
+    if (logoUrl) {
+      await vendorProfileStore.updateLogoFromUrl(logoUrl)
+    }
 
     // ✅ Clear the logo file after successful upload
     logoFile.value = null

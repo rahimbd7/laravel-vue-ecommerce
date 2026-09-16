@@ -144,7 +144,7 @@ export const useVendorProfileStore = defineStore('vendorProfile', {
       this.error.profile = ''
 
       try {
-        const response = await api.put('/vendor/profile/logo', {
+        const response = await api.post('/vendor/profile/logo', {
           logo_url: logoUrl
         })
 
