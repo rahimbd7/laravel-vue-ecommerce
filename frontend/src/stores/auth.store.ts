@@ -67,6 +67,10 @@ export const useAuthStore = defineStore('auth', {
         if (data.status === 'success') {
           this.setToken(data.data.token)
           this.setUser(data.data.user)
+          // Login payload (UserResource) contains no `profile`, so hydrate
+          // it now — otherwise `user.profile.avatar` stays missing and the
+          // dashboard avatar never renders.
+          await this.fetchProfile().catch(() => {})
           return { success: true, data }
         }
         
@@ -87,6 +91,10 @@ export const useAuthStore = defineStore('auth', {
         if (data.status === 'success') {
           this.setToken(data.data.token)
           this.setUser(data.data.user)
+          // Register payload (UserResource) contains no `profile`, so hydrate
+          // it now — otherwise `user.profile.avatar` stays missing and the
+          // dashboard avatar never renders.
+          await this.fetchProfile().catch(() => {})
           return { success: true }
         }
         

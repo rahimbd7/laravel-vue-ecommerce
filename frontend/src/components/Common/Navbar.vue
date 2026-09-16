@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch, nextTick } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart.store'
 import { useAuthStore } from '@/stores/auth.store'
@@ -39,6 +39,40 @@ const cartBadge = computed(() => (cartCount.value > 99 ? '99+' : String(cartCoun
 const userInitials = computed(() => {
   const name = authStore.userName || 'User'
   return name.trim().split(/\s+/).map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+})
+
+// Backend host for resolving relative avatar paths (e.g. "/storage/avatars/x.jpg").
+// Mirrors the logic in src/Layout/DashBoard.vue.
+const storageBaseUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace('/api', '') || 'http://localhost:8000'
+
+const resolveAvatarUrl = (raw: unknown): string | null => {
+  if (typeof raw !== 'string') return null
+  const value = raw.trim()
+  if (!value) return null
+  if (/^(https?:\/\/|data:|blob:)/i.test(value)) return value
+  if (value.startsWith('/')) return `${storageBaseUrl}${value}`
+  return `${storageBaseUrl}/storage/${value}`
+}
+
+const userAvatar = computed(() => resolveAvatarUrl(authStore.user?.profile?.avatar))
+
+// Hide the <img> (fall back to initials) if the URL 404s, instead of showing
+// a broken-image icon in the header.
+const avatarBroken = ref(false)
+watch(userAvatar, () => {
+  avatarBroken.value = false
+})
+const showAvatarImage = computed(() => !!userAvatar.value && !avatarBroken.value)
+const handleAvatarError = () => {
+  avatarBroken.value = true
+}
+
+// Self-heal: the login/register payload (UserResource) carries no `profile`,
+// and localStorage from an older session may also lack it — hydrate via /me.
+onMounted(() => {
+  if (authStore.isAuthenticated && !authStore.user?.profile) {
+    authStore.fetchProfile().catch(() => {})
+  }
 })
 
 /** Role-aware account paths - previously all hard-coded to /customer. */
@@ -241,7 +275,15 @@ onUnmounted(() => {
               aria-controls="account-menu"
               @click="toggleDropdown"
             >
+              <img
+                v-if="showAvatarImage"
+                :src="userAvatar!"
+                :alt="`${authStore.userName}'s profile picture`"
+                class="size-8 rounded-full object-cover"
+                @error="handleAvatarError"
+              />
               <span
+                v-else
                 class="grid size-8 place-items-center rounded-full bg-brand-600 text-xs font-semibold text-white"
                 aria-hidden="true"
               >{{ userInitials }}</span>
@@ -358,7 +400,15 @@ onUnmounted(() => {
           <div class="mt-4 border-t border-ink-200 pt-4">
             <template v-if="authStore.isAuthenticated">
               <div class="mb-3 flex items-center gap-3 px-3">
+                <img
+                  v-if="showAvatarImage"
+                  :src="userAvatar!"
+                  :alt="`${authStore.userName}'s profile picture`"
+                  class="size-10 rounded-full object-cover"
+                  @error="handleAvatarError"
+                />
                 <span
+                  v-else
                   class="grid size-10 place-items-center rounded-full bg-brand-600 text-sm font-semibold text-white"
                   aria-hidden="true"
                 >{{ userInitials }}</span>

@@ -31,17 +31,18 @@
               :label="userName" 
               :model="userMenuItems" 
               class="p-button-sm" 
-              button-class="bg-[#00685F] border-[#00685F] hover:bg-[#004F45]"
+              :buttonProps="{ class: 'bg-[#00685F] border-[#00685F] hover:bg-[#004F45]' }"
             >
               <template #default>
                 <div class="flex items-center gap-2">
                   <!-- Avatar: show profile image if exists, otherwise show initials -->
                   <Avatar
-                    v-if="userAvatar"
-                    :image="userAvatar"
+                    v-if="showAvatarImage"
+                    :image="userAvatar!"
                     size="small"
                     shape="circle"
                     style="border: 2px solid white;"
+                    @error="handleAvatarError"
                   />
                   <Avatar
                     v-else
@@ -66,11 +67,12 @@
             >
               <!-- Avatar: show profile image if exists, otherwise show initials -->
               <Avatar
-                v-if="userAvatar"
-                :image="userAvatar"
+                v-if="showAvatarImage"
+                :image="userAvatar!"
                 size="small"
                 shape="circle"
                 style="cursor: pointer;"
+                @error="handleAvatarError"
               />
               <Avatar
                 v-else
@@ -99,10 +101,11 @@
                 <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
                   <!-- Avatar: show profile image if exists, otherwise show initials -->
                   <Avatar
-                    v-if="userAvatar"
-                    :image="userAvatar"
+                    v-if="showAvatarImage"
+                    :image="userAvatar!"
                     size="large"
                     shape="circle"
+                    @error="handleAvatarError"
                   />
                   <Avatar
                     v-else
@@ -258,12 +261,18 @@ const handleClickOutside = (event: MouseEvent) => {
 }
 
 // Initialize dashboard data when authenticated
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('keydown', handleEscapeKey)
   document.addEventListener('click', handleClickOutside)
-  
+
   if (authStore.isAuthenticated) {
-    dashboardStore.initialize()
+    // Refresh the auth user (which carries `profile.avatar`) — localStorage
+    // from an older login may have no `profile` at all, and the login payload
+    // (UserResource) never includes it.
+    if (!authStore.user?.profile) {
+      await authStore.fetchProfile().catch(() => {})
+    }
+    await dashboardStore.initialize()
   }
 })
 
@@ -305,20 +314,58 @@ const dashboardPath = computed(() => {
   return paths[role] || '/dashboard/customer'
 })
 
-// Get user details from auth store
-const userName = computed(() => authStore.userName)
+// Get user details from auth store (fall back to dashboard profile store,
+// which hydrates GET /me payload including nested `profile.avatar`)
+const userName = computed(() => {
+  const name = authStore.userName && authStore.userName !== 'User'
+    ? authStore.userName
+    : dashboardStore.userFullName
+  return name || 'User'
+})
 const userRole = computed(() => authStore.user?.role || 'customer')
 
 // Compute user initials from auth store user name
 const userInitials = computed(() => {
-  const name = authStore.user?.name || 'User'
+  const name = authStore.user?.name || dashboardStore.userFullName || 'User'
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 })
 
-// Get user avatar URL from auth store (profile image)
+// Backend host for resolving relative avatar paths (e.g. "/storage/avatars/x.jpg")
+const storageBaseUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace('/api', '') || 'http://localhost:8000'
+
+// Resolve an avatar value to a usable image URL:
+// - absolute http(s) / data: / blob: URLs pass through untouched (Cloudinary case)
+// - relative "/storage/..." paths get prefixed with the backend host
+// - bare "avatars/x.jpg" paths get prefixed with "<host>/storage/"
+const resolveAvatarUrl = (raw: unknown): string | null => {
+  if (typeof raw !== 'string') return null
+  const value = raw.trim()
+  if (!value) return null
+  if (/^(https?:\/\/|data:|blob:)/i.test(value)) return value
+  if (value.startsWith('/')) return `${storageBaseUrl}${value}`
+  return `${storageBaseUrl}/storage/${value}`
+}
+
+// Get user avatar URL (profile image). Prefer the auth store, but fall back to
+// the customer dashboard profile store (hydrated from GET /me on mount).
 const userAvatar = computed(() => {
-  return authStore.user?.profile?.avatar || null
+  return (
+    resolveAvatarUrl(authStore.user?.profile?.avatar) ||
+    resolveAvatarUrl(dashboardStore.userAvatar) ||
+    null
+  )
 })
+
+// Track avatar image load failures so a broken URL falls back to initials
+// instead of rendering PrimeVue's empty/broken avatar box.
+const avatarBroken = ref(false)
+watch(userAvatar, () => {
+  avatarBroken.value = false
+})
+const showAvatarImage = computed(() => !!userAvatar.value && !avatarBroken.value)
+const handleAvatarError = () => {
+  avatarBroken.value = true
+}
 
 // Helper function to get orders path
 const getOrdersPath = () => {
@@ -331,28 +378,29 @@ const getOrdersPath = () => {
   return paths[role] || '/dashboard/customer/orders'
 }
 
-// Top Menu Items - Hide on mobile/tablet
-const menuItems = ref([
-  { label: 'Dashboard', icon: 'pi pi-home', to: dashboardPath.value, class: 'hidden lg:block' },
-  { label: 'Shop', icon: 'pi pi-shopping-bag', to: '/shop', class: 'hidden lg:block' },
-  { label: 'Orders', icon: 'pi pi-shopping-cart', to: getOrdersPath(), class: 'hidden lg:block' }
-])
-
-// Watch for role changes to update menuItems
-watch(
-  () => authStore.user?.role,
-  () => {
-    const path = dashboardPath.value
-    const ordersPath = getOrdersPath()
-    
-    menuItems.value = [
-      { label: 'Dashboard', icon: 'pi pi-home', to: path, class: 'hidden lg:block' },
-      { label: 'Shop', icon: 'pi pi-shopping-bag', to: '/shop', class: 'hidden lg:block' },
-      { label: 'Orders', icon: 'pi pi-shopping-cart', to: ordersPath, class: 'hidden lg:block' }
-    ]
+const menuItems = computed(() => [
+  {
+    label: 'Dashboard',
+    icon: 'pi pi-home',
+    to: dashboardPath.value,
+    command: () => router.push(dashboardPath.value),
+    class: 'hidden lg:block'
   },
-  { immediate: true }
-)
+  {
+    label: 'Shop',
+    icon: 'pi pi-shopping-bag',
+    to: '/shop',
+    command: () => router.push('/shop'),
+    class: 'hidden lg:block'
+  },
+  {
+    label: 'Orders',
+    icon: 'pi pi-shopping-cart',
+    to: getOrdersPath(),
+    command: () => router.push(getOrdersPath()),
+    class: 'hidden lg:block'
+  }
+])
 
 const showToast = (severity: string, summary: string, detail: string) => {
   toast.add({ severity, summary, detail, life: 3000 })
