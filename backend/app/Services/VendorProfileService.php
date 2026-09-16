@@ -44,7 +44,7 @@ class VendorProfileService
                 'tax_number' => $vendor->tax_number,
                 'website' => $vendor->website,
                 'description' => $vendor->description,
-                'store_logo' => $vendor->store_logo ? Storage::url($vendor->store_logo) : null,
+                'store_logo' => $vendor->store_logo ? (filter_var($vendor->store_logo, FILTER_VALIDATE_URL) ? $vendor->store_logo : Storage::url($vendor->store_logo)) : null,
                 'commission_rate' => $vendor->commission_rate,
                 'is_verified' => $vendor->is_verified,
                 'verified_at' => $vendor->verified_at,

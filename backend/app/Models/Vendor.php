@@ -24,12 +24,14 @@ class Vendor extends Model {
         'commission_rate',
         'store_logo',
         'shipping_settings',
+        'payment_methods',
     ];
 
     protected $casts = [
         'is_verified'       => 'boolean',
         'commission_rate'   => 'decimal:2',
         'shipping_settings' => 'array',
+        'payment_methods'   => 'array',
     ];
 
     //relationships

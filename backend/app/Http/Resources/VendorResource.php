@@ -25,6 +25,10 @@ class VendorResource extends JsonResource
            'description' => $this->description,
            'commission_rate' => $this->commission_rate,
            'is_verified' => $this->is_verified,
+           'status' => $this->status,
+           'store_logo' => $this->store_logo,
+           'payment_methods' => $this->payment_methods ?? [],
+           'verified_at' => $this->verified_at,
            'user' => new UserResource($this->whenLoaded('user'), function ($user) {
                return $user->only(['uuid', 'name', 'email']);
            }),
