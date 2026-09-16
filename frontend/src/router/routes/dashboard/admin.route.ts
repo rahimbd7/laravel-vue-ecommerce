@@ -128,4 +128,12 @@ export const adminRoutes: RouteRecordRaw[] = [
     component: () => import("@/views/Dashboard/admin/coupon/AdminSingleCoupon.vue"),
     meta: { ...roles, title: "Coupon Details", breadcrumb: ["Coupons", "Details"] },
   },
+
+  // ---- Settings ------------------------------------------------------------
+  {
+    path: "admin/settings",
+    name: "AdminSettings",
+    component: () => import("@/views/Dashboard/admin/settings/setting.vue"),
+    meta: { ...roles, title: "Settings", breadcrumb: ["Settings"] },
+  },
 ];

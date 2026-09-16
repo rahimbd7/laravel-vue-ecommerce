@@ -103,10 +103,24 @@ exportCategories: (params?: any) => api.get('/admin/categories/export', {
   deleteCoupon: (id: string) => api.delete(`/admin/coupons/${id}`),
   toggleCouponStatus: (id: string) => api.post(`/admin/coupons/${id}/toggle-status`),
   getCouponAnalytics: (params?: any) => api.get('/admin/coupons/analytics', { params }),
-   exportCoupons: (params?: any) => api.get('/admin/coupons/export', { 
+  exportCoupons: (params?: any) => api.get('/admin/coupons/export', { 
     params,
     responseType: 'blob' 
   }),
+
+  // ===================== VENDORS =====================
+  // GET /admin/vendors - Searchable, paginated vendor directory
+  getVendorsList: (params?: any) => api.get('/admin/vendors', { params }),
+
+  // GET /admin/vendors/{id} - Single vendor with owner account
+  getVendorDetails: (id: number | string) => api.get(`/admin/vendors/${id}`),
+
+  // PUT /admin/vendors/{id} - Update vendor store details, commission, payment methods
+  updateVendorDetails: (id: number | string, data: any) => api.put(`/admin/vendors/${id}`, data),
+
+  // ===================== SETTINGS =====================
+  getSettings: () => api.get('/admin/settings'),
+  updateSettings: (data: any) => api.put('/admin/settings', data),
 
 }
 
